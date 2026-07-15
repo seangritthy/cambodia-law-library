@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>បណ្ណាល័យច្បាប់កម្ពុជា</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&family=Moul&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- SCREEN 1: Library -->
+    <div id="screen-library">
+        <div class="lib-header">
+            <div class="lib-logo">⚖️</div>
+            <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
+            <p>ជ្រើសរើសសៀវភៅដើម្បីអាន</p>
+        </div>
+        <div id="library-grid" class="lib-grid"></div>
+    </div>
+
+    <!-- SCREEN 2: Reader -->
+    <div id="screen-reader" class="hidden">
+        <div class="reader-topbar">
+            <div id="book-title-bar">...</div>
+            <div id="page-indicator">-- / --</div>
+        </div>
+
+        <div id="reader-loading" class="reader-loading">
+            <div class="spinner"></div>
+            <p>កំពុងផ្ទុក...</p>
+        </div>
+
+        <div id="pdf-scroll-container" class="pdf-scroll-container hidden">
+            <div id="pdf-pages-wrapper"></div>
+        </div>
+
+        <div class="reader-bottombar">
+            <button id="btn-home" onclick="closeBook()">🏠 ផ្ទះ</button>
+            <button id="btn-prev" onclick="prevPage()">◀ មុន</button>
+            <button id="btn-tts" onclick="toggleRead()">🔊 អាន</button>
+            <button id="btn-next" onclick="nextPage()">បន្ទាប់ ▶</button>
+        </div>
+    </div>
+
+    <script src="js/pdf.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

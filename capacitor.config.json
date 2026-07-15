@@ -1,0 +1,10 @@
+{
+  "appId": "com.law.ebook",
+  "appName": "Law Ebook",
+  "webDir": "src",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

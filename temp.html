@@ -1,0 +1,762 @@
+<!--
+
+
+
+-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head><meta property="fb:pages" content="193929600756790" /><meta name="keywords" content="National,Assambly,National Assambly,រដ្ឋសភា,សភា,ច្បាប់,រដ្ឋធម្មនុញ្ញ,ច្បាប់ស្តីពី,Law," /><meta name="description" content="រដ្ឋធម្មនុញ្ញនៃព្រះរាជាណាចក្រកម្ពុជា (និងវិសោធនកម្មចំនួន៨លើក)" /><meta name="author" content="VITHYA" /><meta http-equiv="refresh" content="1000" /><meta charset="UTF-8" /><title>
+	រដ្ឋធម្មនុញ្ញនៃព្រះរាជាណាចក្រកម្ពុជា (និងវិសោធនកម្មចំនួន៨លើក)
+</title><link href="https://nac.org.kh/na/nac.ico" rel="shortcut icon" type="image/x-icon" />
+    <link href="css/video.css" rel="stylesheet" type="text/css" /><link href="Styles/Site.css" rel="stylesheet" type="text/css" /><link href="Styles/MenuLeft.css" rel="stylesheet" type="text/css" /><link href="Styles/Menu.css" rel="stylesheet" type="text/css" />
+
+
+    <script type="text/javascript" src="js/jquery-1.6.js" ></script>
+		<script type="text/javascript" src="js/Vegur_300.font.js"></script>
+		<script type="text/javascript" src="js/PT_Sans_700.font.js"></script>
+		<script type="text/javascript" src="js/PT_Sans_400.font.js"></script>
+		<script type="text/javascript" src="js/tms-0.3.js"></script>
+		<script type="text/javascript" src="js/tms_presets.js"></script>
+		<script type="text/javascript" src="js/jquery.easing.1.3.js"></script>
+		<script type="text/javascript" src="js/atooltip.jquery.js"></script>
+        <script type="text/javascript" src="js/calendar.js" ></script>
+		<style type="text/css">
+            .style1
+            {
+                width: 1250px;
+            }
+        </style>
+<!--
+
+      <script type="text/javascript">
+               function startTime() {
+		var Days = new Array('អាទិត្យ','ចន្ទ','អង្គារ','ពុធ','ព្រហស្បតិ៍','សុក្រ','សៅរ៍');
+		var Months = new Array('មករា','កុម្ភៈ','មីនា','មេសា','ឧសភា','មិថុនា','កក្កដា','សីហា','កញ្ញា','តុលា','វិច្ឆិកា','ធ្នូ');
+                    var today = new Date();
+                    var dd = Days[today.getDay()];
+		    var Day = leadingZero(today.getDate());
+                    var mm = Months[today.getMonth()];
+                    var yyyy = today.getYear()+1900;
+                    var h = today.getHours();
+                    var m = today.getMinutes();
+                    var s = today.getSeconds();
+                    //add a zero in front of numbers<10
+                    m = checkTime(m);
+                    s = checkTime(s);
+                    document.getElementById('txt').innerHTML ="​ថ្ងៃ"+dd+" ទី​"+Day+"​ ខែ"+mm+" ឆ្នាំ"+yyyy+" | "+"ម៉ោង​ " + h + " : " + m +"​ នាទី​​​​" +" : " + s+" វិនាទី";
+                    t = setTimeout('startTime()', 500);
+                    document.getElementById('table').style.height = (screen.availHeight - 65) + "px";
+                    document.getElementById('MN').style.height = (screen.availHeight - 220) + "px";
+                    document.getElementById('tbl').style.width = (screen.availWidth - 800) + "px";
+                }
+                function checkTime(i) {
+                    if (i < 10) {
+                        i = "0" + i;
+                    }
+                    return i;
+                }
+function leadingZero(nr)
+    {
+    	if (nr < 10) nr = "0" + nr;
+    	return nr;
+    }
+        </script>
+
+
+-->
+
+
+
+<script type="text/javascript">
+    var mx;
+    var my;
+    var direction;
+    var speed;
+    function mouseOver(me) {
+        me.stop();
+        var e = window.event;
+        mx = e.clientX;
+        my = e.clientY;
+    }
+
+    function mouseOut(me) {
+        me.start();
+        mx = -1;
+        my = -1;
+    }
+
+    function mouseMove(me) {
+        var e = window.event;
+        var x = e.clientX;
+        var y = e.clientY;
+        if (isNaN(mx) || isNaN(my)) {
+            mx = x; my = y;
+            return;
+        }
+        var delta = x - mx;
+        direction = (delta) > 0 ? 1 : -1;
+        speed = delta < 0 ? -delta : delta;
+        mx = x; my = y;
+        var sxEle = document.getElementById("X");
+        var syEle = document.getElementById("Y");
+        var directionEle = document.getElementById("direction");
+        var speedEle = document.getElementById("speed");
+        var delayEle = document.getElementById("delay");
+        sxEle.value = mx;
+        syEle.value = my;
+        directionEle.value = direction;
+
+        me.direction = direction > 0 ? "right" : "left";
+        me.scrollAmount = speed;
+        var mqDelay = 100 - speed * 10 * 4;
+        mqDelay = mqDelay < 0 ? 1 : mqDelay;
+        me.scrollDelay = mqDelay;
+        speedEle.value = speed;
+        delayEle.value = mqDelay;
+        me.start();
+    }
+ 
+</script>
+<style>
+/* navigation style */
+#nav{	
+	margin-left: 0px;
+	padding-left: 0px;
+	width:198px;
+	z-index:99999;
+}	
+
+#nav li{
+	list-style: none;
+	display: block;
+	height: 35px;
+	position: relative;
+}
+
+#nav li a{
+	padding: 0px 10px 0px 30px;
+	margin: 0px 0;
+	line-height: 28px;
+	text-decoration: none;
+}
+#nav li a span
+{
+    float:right;
+    padding-right:10px;
+}
+#nav ul{
+	background: #f2f5f6; 
+	padding: 0px;
+	border-right: 1px solid #DDDDDD;
+	border-left:1px solid #DDDDDD;
+	border-radius: 0px 0px 3px 3px;
+	box-shadow: 2px 2px 3px #000;
+	-webkit-box-shadow: 2px 2px 3px #ECECEC;
+    -moz-box-shadow:2px 2px 3px #ECECEC;
+	width:198px;
+}
+#nav .site-name,#nav .site-name:hover{
+	padding-left: 10px;
+	padding-right: 10px;
+	color: #FFF;
+	text-shadow: 1px 1px 1px #66696B;
+	font: italic 20px/38px Georgia, "Times New Roman", Times, serif;
+	background: url(images/saaraan.png) no-repeat 10px 5px;
+	width: 198px;
+	border-right: 1px solid #52BDB5;
+}
+#nav .site-name a{
+	width: 129px;
+	overflow:hidden;
+}
+#nav li.facebook{
+	background: url(images/facebook.png) no-repeat 9px 12px;
+}
+#nav li.facebook:hover  {
+	background: url(images/facebook.png) no-repeat 9px 12px #3BA39B;
+}
+#nav li.yahoo{
+	background: url(images/yahoo.png) no-repeat 9px 12px;
+}
+#nav li.yahoo:hover  {
+	background: url(images/yahoo.png) no-repeat 9px 12px #3BA39B;
+}
+#nav li.google{
+	background: url(images/google.png) no-repeat 9px 12px;
+}
+#nav li.google:hover  {
+	background: url(images/google.png) no-repeat 9px 12px #3BA39B;
+}
+#nav li.twitter{
+	background: url(images/twitter.png) no-repeat 9px 12px;
+}
+#nav li.twitter:hover  {
+	background: url(images/twitter.png) no-repeat 9px 12px #3BA39B;
+}
+
+#nav li:hover{
+	background: #3BA39B;
+}
+#nav li a{
+	display: block;
+}
+#nav ul li {
+	border-right:none;
+	width:198px;
+	height:35px;
+}
+#nav ul li a {
+	border-right: none;
+	color:#6791AD;
+}
+#nav ul li:hover{background:#DFEEF0;}
+#nav ul li:last-child { border-bottom: none;}
+#nav ul li:last-child a{ border-bottom: none;}
+/* Sub menus */
+#nav ul{
+	display: none;
+	visibility:hidden;
+	position: absolute;
+}
+
+/* Third-level menus */
+#nav ul{
+	top: 0px;
+	left:198px;
+	display: none;
+	visibility:hidden;
+	border: 1px solid #DDDDDD;
+	z-index:999999;
+}
+/* Fourth-level menus */
+#nav ul ul{
+	top: 0px;
+	left:198px;
+	display: none;
+	visibility:hidden;
+	border: 1px solid #DDDDDD;
+	z-index:999999;
+}
+
+#nav ul li{
+	display: block;
+	visibility:visible;
+}
+#nav li:hover > ul{
+	display: block;
+	visibility:visible;
+}
+</style>
+<!--[if IE 7]>
+<style>
+#nav{
+	margin-left:0px
+}
+#nav ul{
+	left:-40px;
+}
+#nav ul ul{
+	left:130px;
+}
+#nav ul ul ul{
+	left:130px;
+}
+</style>
+<![endif]-->
+<!--<script type="text/javascript" src="menu/js/jquery-1.9.0.min.js"></script>-->
+<script>
+    $(document).ready(function () {
+        $("#nav li").hover(
+	function () {
+	    $(this).children('ul').hide();
+	    $(this).children('ul').slideDown('fast');
+	},
+	function () {
+	    $('ul', this).slideUp('fast');
+	});
+    });
+</script>
+
+</head>
+<body onload="startTime();">
+<div id="fb-root"></div>
+<script>    (function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+        fjs.parentNode.insertBefore(js, fjs);
+    } (document, 'script', 'facebook-jssdk'));</script>
+
+    <form method="post" action="./ViewLawFile.aspx?LawDID=172" id="form1">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="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" />
+
+<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="65C2978B" />
+<input type="hidden" name="__VIEWSTATEENCRYPTED" id="__VIEWSTATEENCRYPTED" value="" />
+<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="Z2BVXUuSeHoWHHmMGGdu/clIBvDKw/iexVjDNzNkUvvhBHkBS2+erOFW/Hstb0vRNJKyj7ACrDXyUuNSCBXKHvsTuy2EM47DfGziRZWONabLSGCHVYUbIONd+YeKyOd9ndVzCdD2aCbn0OSZV2RoyQ==" />
+    <div align="center">
+    <div class="Topline" style="background-color: #FFFFFF; border: thin hidden #FFFFFF">
+        <table align="center" cellpadding="0" class="style1" border="0" cellspacing="0">
+            <tr>
+                <td>
+
+		<div id="txt"  style=" font-size: 12px; text-align: left; float: left; margin-top: 1px; margin-left: 5px;"></div>
+
+<!--
+                <div id="date"  style=" float:left; font-size: 13px; text-align: left; "><span id="lblDatetime">Tuesday , July  14 , 2026 </span></div>
+-->
+                
+                </td>
+<!--
+                <td align="right" width="30px">
+                  <a href="http://www.nac.org.kh/" target="_blank"> <img id="Image11" src="Images/Login.jpg" /> </a>
+                </td>
+
+                <td align="center" width="30px">
+                 <a href="http://fr.nac.org.kh/" target="_blank"> <img id="Image2" src="Images/fr.gif" /></a>
+                </td>
+-->
+
+                <td align="right" width="30px">
+                  <a href="http://webmail.nac.org.kh/" target="_blank">  <img id="Image9" src="Images/mail.png" width="16" /></a>
+                </td>
+
+                <td align="left" width="30px">
+                   <a href="https://en.nac.org.kh/" target="_blank"> <img id="Image3" src="Images/en.gif" /></a>
+                </td>
+            </tr>
+        </table>
+        </div>
+
+     <img id="Image1" src="photos/Nac2024.png" height="232" width="1250" />
+
+
+<!--
+     <div style="border-style: solid; border-width: 0px 0px 2px 0px; border-color: #0085DD; width: 100%; height: 100px; background-color: #25A6E1;"> 
+     <div style="text-align: center; margin: auto; width: 1250px;">
+     <img id="Image25" src="Images/Slide/Nac2024.png" height="232" width="1250" />
+     </div>
+     </div>
+
+-->   
+
+  <div class="box-marquee" style="background-color: #FFFFFF; border: thin hidden #FFFFFF">
+      <div class="marquee" style="background-color: #FFFFFF">
+    <marquee scrollamount="2" id="BB"  direction="left"  onmouseover="mouseOver(this);" onmouseout="mouseOut(this);" scrolldelay="100"  width="1250">
+    <table id="DataList6" cellspacing="0" width="100%">
+	<tr>
+		<td nowrap="nowrap">
+        <a href="https://nac.org.kh/article/9576" style="text-decoration:none;">
+          
+            <span id="DataList6_BreakingNameLabel_0">សេចក្តីប្រកាសព័ត៌មាន ស្តីពីលទ្ធផលនៃកិច្ចប្រជុំគណៈកម្មាធិការអចិន្រ្តៃយ៍រដ្ឋសភា នាព្រឹកថ្ងៃព្រហស្បតិ៍ ទី២៦ ខែមីនា ឆ្នាំ២០២៦</span>
+          </a>
+        </td><td nowrap="nowrap">
+        <a href="https://nac.org.kh/article/9337" style="text-decoration:none;">
+          
+            <span id="DataList6_BreakingNameLabel_1">សេចក្តីជូនដំណឹង រដ្ឋសភា នៃព្រះរាជាណាចក្រកម្ពុជា នឹងបន្តសម័យប្រជុំរដ្ឋសភាលើកទី៥ នីតិកាលទី៧ នៅថ្ងៃព្រហស្បតិ៍ ទី២៥ ខែធ្នូ ឆ្នាំ២០២៥__</span>
+          </a>
+        </td><td nowrap="nowrap">
+        <a href="https://nac.org.kh/article/9262" style="text-decoration:none;">
+          
+            <span id="DataList6_BreakingNameLabel_2">សេចក្តីជូនដំណឹង ស្តីពី ការអញ្ជើញដាក់តម្លៃ (Quotation) ដើម្បីសាងសង់អគារទីស្នាក់ការរដ្ឋសភាមណ្ឌលរាជធានី-ខេត្ត ចំនួន ៤ខេត្ត រួមមាន ខេត្តតាកែវ ខេត្តកំពង់ឆ្នាំង ខេត្តក្រចេះ និងខេត្តសៀមរាប__</span>
+          </a>
+        </td><td nowrap="nowrap">
+        <a href="https://nac.org.kh/article/9261" style="text-decoration:none;">
+          
+            <span id="DataList6_BreakingNameLabel_3">ញត្តិថ្កោលទោស សង្គ្រាមឈ្លានពានរបស់ថៃមកលើអធិបតេយ្យនៃព្រះរាជាណាចក្រកម្ពុជា__</span>
+          </a>
+        </td><td nowrap="nowrap">
+        <a href="https://nac.org.kh/article/9238" style="text-decoration:none;">
+          
+            <span id="DataList6_BreakingNameLabel_4">ព្រះរាជសារ ព្រះករុណាព្រះបាទសម្តេចព្រះបរមនាថ នរោត្តម សីហមុនី ព្រះមហាក្សត្រនៃព្រះរាជាណាចក្រកម្ពុជា ក្នុងឱកាសបើកបវេសនកាលនៃរដ្ឋសភា សម័យប្រជុំរដ្ឋសភា លើកទី៥ នីតិកាលទី៧ នៅថ្ងៃទី២៨ ខែវិច្ឆិកា ឆ្នាំ២០២៥ ៕</span>
+          </a>
+        </td>
+	</tr>
+</table>
+   
+          </marquee>
+    </div>
+    </div>
+
+
+ 
+
+
+    <div class="wrapperbody" align="center" style="background-color: #FFFFFF; border: thin hidden #FFFFFF">
+    <div  style="width: 1250px" >
+    <div class="wrapperSubbody">
+
+
+    <div class="LeftMenu">
+    <div class="MenuLeft">មាតិកា</div>
+    <div id="menu"style="padding: 0px; margin: 1px 5px 5px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;">
+        <span id="lblmenu"><ul id="nav"><li><a href="https://nac.org.kh">ទំព័រមុខ</a> </li><li><a href="/group-article/2 ">សារស្វាគមន៍</a> </li><li><a href="/group-article/3 ">សាវតារដ្ឋសភា</a> </li><li><a href="/group-article/11 ">រដ្ឋធម្មនុញ្ញ</a> </li><li><a href="/group-article/29 ">បទបញ្ជាផ្ទៃក្នុងនៃរដ្ឋសភា</a> </li><li><a href="#">រចនាសម្ព័ន្ធរបស់រដ្ឋសភា <span>&raquo;</span></a> <ul><li><a href="/group-article/30 ">អង្គការលេខនៃរដ្ឋសភា</a></li><li><a href="/group-article/31 ">ថ្នាក់ដឹកនាំនៃរដ្ឋសភា</a></li></ul></li><li><a href="#">សមាជិកសភា <span>&raquo;</span></a> <ul><li><a href="/group-article/117 ">នីតិកាលទី៧ (២០២៣-២០២៨)</a></li><li><a href="/group-article/115 ">នីតិកាលទី៦ (២០១៨-២០២៣)</a></li><li><a href="/group-article/57 ">នីតិកាលទី៥ (២០១៣-២០១៨)</a></li><li><a href="/group-article/50 ">នីតិកាលទី៤ (២០០៨-២០១៣)</a></li><li><a href="/group-article/49 ">នីតិកាលទី៣ (២០០៣-២០០៨)</a></li><li><a href="/group-article/48 ">នីតិកាលទី ២ (១៩៩៨-២០០៣)</a></li><li><a href="/group-article/47 ">នីតិកាលទី ១ (១៩៩៣-១៩៩៨)</a></li></ul></li><li><a href="#">គណៈកម្មការជំនាញ <span>&raquo;</span></a> <ul><li><a href="#">គណៈកម្មការទី១ <span>&raquo;</span></a> <ul><li><a href="/group-article/69 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/70 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/71 ">សកម្មភាព</a></ul></li><li><a href="#">គណៈកម្មការទី២ <span>&raquo;</span></a> <ul><li><a href="/group-article/83 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/84 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/85 ">សកម្មភាព</a></ul></li><li><a href="#">គណៈកម្មការទី៣ <span>&raquo;</span></a> <ul><li><a href="/group-article/86 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/87 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/88 ">សកម្មភាព</a></ul></li><li><a href="#">គណៈកម្មការទី៤ <span>&raquo;</span></a> <ul><li><a href="/group-article/89 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/90 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/91 ">សកម្មភាព</a></ul></li><li><a href="#">គណៈកម្មការទី៥ <span>&raquo;</span></a> <ul><li><a href="/group-article/92 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/98 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/104 ">សកម្មភាព</a></ul></li><li><a href="#">គណៈកម្មការទី៦ <span>&raquo;</span></a> <ul><li><a href="/group-article/93 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/99 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/105 ">សកម្មភាព</a></ul></li><li><a href="#">គណៈកម្មការទី៧ <span>&raquo;</span></a> <ul><li><a href="/group-article/94 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/100 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/106 ">សកម្មភាព</a></ul></li><li><a href="#">គណៈកម្មការទី៨ <span>&raquo;</span></a> <ul><li><a href="/group-article/95 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/101 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/107 ">សកម្មភាព</a></ul></li><li><a href="#">គណៈកម្មការទី៩ <span>&raquo;</span></a> <ul><li><a href="/group-article/96 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/102 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/108 ">សកម្មភាព</a></ul></li><li><a href="#">គណៈកម្មការទី១០ <span>&raquo;</span></a> <ul><li><a href="/group-article/97 ">រចនាសម្ព័ន្ធ</a><li><a href="/group-article/103 ">តួនាទី-ភារកិច្ច</a><li><a href="/group-article/109 ">សកម្មភាព</a></ul></li></ul></li><li><a href="#">គណៈកម្មាធិការអចិន្ត្រៃយ៍ <span>&raquo;</span></a> <ul><li><a href="/group-article/110 ">រចនាសម្ព័ន្ធ</a></li><li><a href="/group-article/111 ">តួនាទី-ភារកិច្ច</a></li></ul></li><li><a href="#">សមត្ថកិច្ចរបស់រដ្ឋសភា <span>&raquo;</span></a> <ul><li><a href="/group-article/35 ">អំណាចនីតិប្បញ្ញត្តិ </a></li><li><a href="/group-article/36 ">ច្បាប់ស្តីពីលក្ខន្តិកៈតំណាងរាស្រ្ត </a></li><li><a href="/group-article/37 ">ឯកសណ្ឋាន និងសញ្ញាស័ក្តិ</a></li><li><a href="/group-article/38 ">នីតិវិធីនៃការកសាងច្បាប់ </a></li></ul></li><li><a href="#">អគ្គលេខាធិការដ្ឋានរដ្ឋសភា <span>&raquo;</span></a> <ul><li><a href="/group-article/39 ">អង្គការលេខ </a></li><li><a href="/group-article/40 ">ថ្នាក់ដឹកនាំ</a></li><li><a href="/group-article/41 ">តួនាទី-ភារកិច្ច</a></li><li><a href="/group-article/42 ">ច្បាប់លក្ខន្តិកៈមន្រ្តីរាជការនីតិប្បញ្ញត្តិ</a></li><li><a href="/group-article/112 ">បទបញ្ជាផ្ទៃក្នុង នៃ អ.រ.ស</a></li></ul></li><li><a href="#">បញ្ជីច្បាប់ <span>&raquo;</span></a> <ul><li><a href="/group-law/118 ">ច្បាប់នីតិកាលទី៧</a></li><li><a href="/group-law/114 ">ច្បាប់នីតិកាលទី៦</a></li><li><a href="/group-law/80 ">ច្បាប់នីតិកាលទី៥</a></li><li><a href="/group-law/56 ">ច្បាប់នីតិកាលទី៤</a></li><li><a href="/group-law/55 ">ច្បាប់នីតិកាលទី៣</a></li><li><a href="/group-law/54 ">ច្បាប់នីតិកាលទី២</a></li><li><a href="/group-law/53 ">ច្បាប់នីតិកាលទី១</a></li></ul></li><li><a href="#">ព័ត៌មាន <span>&raquo;</span></a> <ul><li><a href="/group-article/25 ">សេចក្តីជូនដំណឹង</a></li><li><a href="/group-article/24 ">ប្រកាសព័ត៌មាន</a></li><li><a href="/group-article/51 ">ព័ត៌មានប្រចាំថ្ងៃ</a></li></ul></li><li><a href="/group-article/12 ">ព្រឹត្តិប័ត្រប្រចាំខែ</a> </li><li><a href="#">បណ្ណសារដ្ឋាន <span>&raquo;</span></a> <ul><li><a href="/group-article/44 ">បណ្ណាល័យវីដេអូ</a></li><li><a href="/group-article/45 ">បណ្ណាល័យសម្លេង</a></li><li><a href="/group-article/46 ">បណ្ណាល័យរូបភាព</a></li><li><a href="/group-article/26 ">បណ្ណាល័យទូរទស្សន៍</a></li><li><a href="/group-article/81 ">បណ្ណាល័យអេឡិចត្រូនិក</a></li></ul></li><li><a href="/group-article/14 ">អង្គការជាតិ-អន្តរជាតិ</a> </li><li><a href="#">ការចេញ-ចូលវិមានរដ្ឋសភា <span>&raquo;</span></a> <ul><li><a href="/group-article/17 ">ទំនាក់ទំនងសន្តិសុខរដ្ឋសភា</a></li><li><a href="/group-article/15 ">នីតិវិធីការចេញ-ចូល</a></li></ul></li><li><a href="#">ទំនាក់ទំនង <span>&raquo;</span></a> <ul><li><a href="/group-article/18 ">ខុទ្ទកាល័យសម្តេចប្រធាន</a></li><li><a href="/group-article/19 ">អនុប្រធានទី១</a></li><li><a href="/group-article/20 ">អនុប្រធានទី២</a></li><li><a href="/group-article/21 ">អគ្គលេខាធិការដ្ឋានរដ្ឋសភា</a></li><li><a href="/group-article/82 ">សារជាអេឡិចត្រូនិក​ E-MAIL</a></li></ul></li><li><a href="/group-article/116 ">បណ្តុំឯកសារ</a> </li></ul></span>
+    </div>
+
+<div class="MenuLeft">បណ្ណាល័យច្បាប់</div>
+    <div style="padding: 25px 0px 0px -5px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;">
+    <div style="margin: 0px; padding-top: 10px;">
+    <a href="http://nac.org.kh/group-law/53"​​ target="_blank">
+    <img id="Image10" src="Images/NA_Laws.gif" />
+    </a>
+    </div>
+    </div>
+
+
+<div class="MenuLeft">ព័ត៌មានវីដេអូ (Video News)</div>
+    <div style="padding: 25px 0px 0px -5px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;">
+    <div style="margin: 0px; padding-top: 10px;">
+
+
+        <p>
+
+
+
+<iframe width="199" height="110" src="https://www.youtube.com/embed/NNuAVyWvGM8" title="កម្មវិធីថ្មី ÷ «ណែនាំអំពីរដ្ឋសភា»" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<!--
+
+<iframe width="199" height="110" src="https://www.youtube.com/embed/Lu2L3MMZUEE" title="វីដេអូៈ សភានៃព្រះរាជាណាចក្រកម្ពុជា នឹងរៀបចំសមាជរដ្ឋសភានិងព្រឹទ្ធសភា" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+
+<iframe width="199" height="110" src="https://www.youtube.com/embed/l77YKF3QIlw" title="IPTP11 2014" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+
+<iframe src="https://www.facebook.com/plugins/video.php?height=315&href=https%3A%2F%2Fwww.facebook.com%2FCambodiaAssembly%2Fvideos%2F572769008456379%2F&show_text=false&width=560&t=0" width="199" height="110" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen="true"></iframe>		
+
+
+<iframe src="https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2FCambodiaAssembly%2Fvideos%2F518433533896826%2F&show_text=false&width=560&t=0" width="199" height="110" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen="true"></iframe>
+
+<iframe src="https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2FCambodiaAssembly%2Fvideos%2F518433533896826%2F&show_text=false&width=560&t=0" width="560" height="314" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen="true"></iframe>
+
+<iframe src="https://www.facebook.com/plugins/video.php?height=314&href=https%3A%2F%2Fwww.facebook.com%2FCambodiaAssembly%2Fvideos%2F849331119880847%2F&show_text=false&width=560&t=0" width="560" height="314" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen="true"></iframe>
+
+<iframe width="199" height="100" src="https://www.youtube.com/embed/tP7giaGnS5Y" title="ព្រះរាជសុន្ទរកថារបស់ព្រះមហាក្សត្រ ក្នុងពិធីបើកសម័យប្រជុំលើកដំបូង នៃរដ្ឋសភា នីតិកាលទី៧" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+<iframe width="199" height="100" src="https://www.youtube.com/embed/kqXF0kpiBuA" title="ពិធីសច្ចាប្រណិធាន" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe width="199" height="100" src="https://www.youtube.com/embed/iI3DHdnFvT4" title="វីដេអូ៖​ សុន្ទរកថា លោកជំទាវកិត្តិសង្គហបណ្ឌិត ឃួន​ សុដារី" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe width="199" height="100" src="https://www.youtube.com/embed/EeDxkoWKTow" title="សុន្ទរកថាទាំងស្រុងរបស់ ឯកឧត្តមកិត្តិទេសាភិបាលបណ្ឌិត ហ៊ុន ម៉ាណែត" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe width="199" height="100" src="https://www.youtube.com/embed/fyhINXdYHus" title="ប្រសាសន៍ចំណាប់អារម្មណ៍របស់ សម្ដេចអគ្គមហាសេនាបតីតេជោ ហ៊ុន សែន" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe width="199" height="100" src="https://www.youtube.com/embed/zDyYSzy64MM" title="ព្រះរាជក្រឹត្យ តែងតាំងគណៈរដ្ឋមន្រ្តី សម្រាប់អាណត្តិទី៧" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe width="199" height="100" src="https://www.youtube.com/embed/npPuHk3qqPE" title="សម័យប្រជុំលើកទី១ រដ្ឋសភា នីតិកាលទី៧" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe width="199" height="100" src="https://www.youtube.com/embed/NmzC0GYunL8" title="ពិធីបើកសម័យប្រជុំដំបូងរដ្ឋសភា នីតិកាលទី៧" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+--> 
+</p>
+
+
+    
+</div>
+    </div>
+
+
+
+<!-- 
+
+
+	<div class="MenuLeft">ចក្ខុវិស័យអាស៊ាននឹងកម្ពុជា</div>
+	    <div style="padding: 25px 0px 0px -5px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;">
+	    <div style="margin: 0px; padding-top: 10px;">
+	    <a href="http://national-assembly.org.kh/article/5903#.Y3y-AOFBzdc"​​ target="_blank">
+	    <img id="Image30" src="slides/QR-code-KHR-Ver.png" />
+	    </a>
+	    </div>
+	</div>
+
+
+
+
+    <div class="MenuLeft">ព័ត៌មានវីដេអូ (Video News)</div>
+<iframe src="https://www.facebook.com/plugins/video.php?&href=https%3A%2F%2Fwww.facebook.com%2FCambodiaAssembly%2Fvideos%2F1167666174179941%2F&show_text=false&width=560&t=0" width="199" height="100" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen="true"></iframe>
+
+    <div style="padding: 0px 0px 0px -5px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;">
+        <table id="DataList5" cellspacing="0">
+	<tr>
+		<td>
+            <span id="DataList5_VLinkLabel_0"><p><iframe allowfullscreen="" frameborder="0" height="150" src="https://www.youtube.com/embed/nCPrlJyPzSg?ecver=2" width="196"></iframe></p></span>
+            </td>
+	</tr>
+</table>
+        
+    </div>
+
+
+
+    <div class="MenuLeft">Page-Facebook រដ្ឋសភា</div>
+    <div id="Div1" style="padding: 0px; margin: -2px 5px 5px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;" align="center">
+    <div class="fb-like-box" data-href="https://www.facebook.com/pages/National-Assembly-Of-Cambodia/386873978080616?ref=hl" data-width="190" data-height="500" data-show-faces="true" data-header="false" data-stream="false" data-show-border="false"></div>
+    </div>
+
+-->
+	<div class="MenuLeft">បណ្តាញសង្គមរដ្ឋសភា</div>
+	<div style="padding: 5px 0px 0px 0px; margin: -2px 5px 5px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;">
+    
+        <a href="https://t.me/nac_cam" target="_blank"><img id="Image22" src="logo/tele.jpg" />Telegram</a></br>
+        <a href="https://www.facebook.com/CambodiaAssembly" target="_blank"><img id="Image23" src="logo/Fb.png" />Facebook</a></br>
+        <a href="https://www.instagram.com/national.assembly/" target="_blank"><img id="Image24" src="logo/ig.png" />Instagram</a></br>
+        <a href="https://twitter.com/NationalOf62989" target="_blank"><img id="Image27" src="logo/tw.png" />(X) Twitter</a></br>
+        <a href="https://www.youtube.com/@nationalassemblyofcambodia" target="_blank"><img id="Image28" src="logo/yt.jpg" />YouTube</a></br>
+
+<a href="https://www.tiktok.com/@national.assembly?_t=8j2nnh9CZG5&_r=1" target="_blank"><img id="Image26" src="logo/tiktok.png" />TikTok </a></br>
+<!--
+		
+	<center>
+   	 <a href="http://www.nac.org.kh/article/14"><img src="http://s03.flagcounter.com/count/698/bg_FFFFFF/txt_000000/border_CCCCCC/columns_2/maxflags_42/viewers_3/labels_1/pageviews_1/flags_1/" border="0"></a>
+
+		<script type="text/javascript" src="http://widget.supercounters.com/flag.js">
+		</script>
+		<script type="text/javascript">sc_flag(1039208,"FFFFFF","000000","cccccc",2,20,0,0)
+		</script>
+	</center>   
+
+-->
+	</div>
+
+<!--
+
+          <div class="MenuLeft">ចំនួនអ្នកទស្សនាសរុប</div>
+	<div style="border-left: 1px solid #25A6E1; border-right: 1px solid #25A6E1; border-top: 0px solid #25A6E1; border-bottom: 1px solid #25A6E1; padding: 5px 0px 5px 0px; margin: -2px 5px 5px 5px; width: 198px; height:45px; ">
+	<div align='center'><img src='http://www.free-website-hit-counter.com/c.php?d=9&id=73850&s=16' border='0'><br / >
+
+		<script id="_wau79l">var _wau = _wau || []; _wau.push(["small", "mnlkei5szpr6", "79l"]);
+		(function() {var s=document.createElement("script"); s.async=true;
+		s.src="http://widgets.amung.us/small.js";
+		document.getElementsByTagName("head")[0].appendChild(s);
+		})();</script>    
+
+		<script id="_wauv54">var _wau = _wau || []; _wau.push(["small", "19qh44c4lx2l", "v54"]);
+		(function() {var s=document.createElement("script"); s.async=true;
+		s.src="http://widgets.amung.us/small.js";
+		document.getElementsByTagName("head")[0].appendChild(s);
+		})();</script>
+
+	</div>
+     </div>
+	 
+	 
+-->
+
+    </div>
+
+    <div class="ContentPlaceHolder" style="background-color: #FFFFFF" align="center">
+        
+    <div>
+<div style="padding: 2px 2px 0px 2px; border-left: 0px solid #CCCCCC; border-right: 0px solid #CCCCCC; border-top: 0px solid #CCCCCC; border-bottom: 2px solid #CCCCCC; display:block; width:100%; float:left; font-size: 13px; font-weight: normal; text-align: left;">
+      <a id="ContentPlaceHolder1_HL" href="Default.aspx">Home</a>
+      &nbsp;<span id="ContentPlaceHolder1_Label7"><font face="Verdana"> »</font></span>
+      <a id="ContentPlaceHolder1_lblMainMenu">បញ្ជីច្បាប់</a>
+      &nbsp;<span id="ContentPlaceHolder1_lblarrow0"><font face="Verdana"> »</font></span>
+      <a id="ContentPlaceHolder1_lblSubMenu" href="/group-law/53">ច្បាប់នីតិកាលទី១</a>
+      &nbsp;<span id="ContentPlaceHolder1_lblarrow"><font face="Verdana"> »</font></span>
+      <span id="ContentPlaceHolder1_lblTitle">រដ្ឋធម្មនុញ្ញនៃព្រះរាជាណាចក្រកម្ពុជា (និងវិសោធនកម្មចំនួន៨លើក)</span>
+  </div>
+  <br class="clear" />
+    <div style="width: 100%; margin-top: 3px;">
+    <table id="ContentPlaceHolder1_DataList1" cellspacing="0">
+	<tr>
+		<td>
+            <table cellpadding="2" width="830px" style="border: 1px solid #CCCCCC" 
+                cellspacing="0">
+                <tr>
+                    <td style="background-color: #EBEBEB; color: #003366; font-size: 14px; font-weight: bolder; text-align: center;">
+                        Law Name</td>
+                    <td style="background-color: #EBEBEB; color: #003366;  font-size: 14px; font-weight: bolder">
+                        Year Approve</td>
+                </tr>
+                <tr>
+                    <td style="text-align: center">
+                        <span id="ContentPlaceHolder1_DataList1_Label1_0">រដ្ឋធម្មនុញ្ញនៃព្រះរាជាណាចក្រកម្ពុជា (និងវិសោធនកម្មចំនួន៨លើក)</span>
+                    </td>
+                    <td>
+                        <span id="ContentPlaceHolder1_DataList1_Label2_0">១៩៩៣</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <iframe ID="172" height="1000px" name="172" src='files/1.pdf' 
+                            width="820px" frameborder="0"></iframe>
+                    </td>
+                </tr>
+            </table>
+        </td>
+	</tr>
+</table>
+        
+            <select name="ctl00$ContentPlaceHolder1$ddlLawID" id="ContentPlaceHolder1_ddlLawID" class="hide">
+	<option selected="selected" value="172">172</option>
+
+</select>
+        
+        
+            
+        
+      </div>      
+</div>
+    
+    </div>
+    </div>
+
+
+
+    <div class="RightMenu">
+
+
+<div class="MenuLeft">IPTP 11th (2024)</div>
+    <div style="padding: 25px 0px 0px -5px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;">
+    <div style="margin: 0px; padding-top: 10px;">
+    <a href="https://iptp11.nac.org.kh/" target="_blank">
+    <img id="Image4" src="slides/2024IPTP11.png" />
+    </a>
+    </div>
+    </div>
+
+<!--
+
+<div class="MenuLeft">របាយការណ៍សង្ខេប</div>
+    <div style="padding: 25px 0px 0px -5px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 197px;">
+    <div style="margin: 0px; padding-top: 10px;">
+    <a href="http://nac.org.kh/na/Sessions07 Legislative06 Summary_Report_KH.pdf"​​ target="_blank">
+    <img id="Image15" src="Images/NA2021.gif" />
+    </a>
+    </div>
+    </div>
+
+<div class="MenuLeft">8th APA PLENARY</div>
+    <div style="padding: 25px 0px 0px -5px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;">
+    <div style="margin: 0px; padding-top: 10px;">
+    <a href="http://apa.nac-kh.org/" target="_blank">
+    <img id="Image6" src="Images/APA-PP-2015.jpg" />
+    </a>
+    </div>
+    </div>
+
+
+    <div class="MenuLeft">7th AIPA Caucus</div>
+    <div style="padding: 25px 0px 0px -5px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px;">
+    <div style="margin: 0px; padding-top: 10px;">
+    <a href="http://aipa.nac-kh.org/" target="_blank">
+    <img id="Image5" src="Images/Slide/7thAIPACaucus.jpg" />
+    </a>
+    </div>
+    </div>
+    
+-->    
+        <table id="DataList1" cellspacing="0" width="200">
+	<tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_0">ព្រឹទ្ធសភា Senate </span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="http://www.senate.gov.kh" target="_blank">
+                <img id="DataList1_Image8_0" src="Images/Slide/senate1.png" />
+                </a>
+                </div>
+                </td>
+	</tr><tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_1">ក្រុមប្រឹក្សាធម្មនុញ្ញ CCC</span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="http://www.ccc.gov.kh/" target="_blank">
+                <img id="DataList1_Image8_1" src="Images/Slide/ccc.png" />
+                </a>
+                </div>
+                </td>
+	</tr><tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_2">ទីស្តីការគណៈរដ្ឋមន្រ្តី OCM</span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="http://pressocm.gov.kh/" target="_blank">
+                <img id="DataList1_Image8_2" src="Images/Slide/ocm.png" />
+                </a>
+                </div>
+                </td>
+	</tr><tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_3">គ.ជ.ប NEC</span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="https://nec.gov.kh/khmer/" target="_blank">
+                <img id="DataList1_Image8_3" src="Images/Slide/nec.png" />
+                </a>
+                </div>
+                </td>
+	</tr><tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_4">អាស៊ាន ASEAN</span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="http://www.asean.org/" target="_blank">
+                <img id="DataList1_Image8_4" src="Images/Slide/asean_svg.png" />
+                </a>
+                </div>
+                </td>
+	</tr><tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_5">អាយ.ភី.យូ IPU</span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="http://www.ipu.org/english/home.htm" target="_blank">
+                <img id="DataList1_Image8_5" src="Images/Slide/ipu.png" />
+                </a>
+                </div>
+                </td>
+	</tr><tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_6">អាយ.ប៉ា AIPA</span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="http://www.aipasecretariat.org/" target="_blank">
+                <img id="DataList1_Image8_6" src="Images/Slide/aipa.png" />
+                </a>
+                </div>
+                </td>
+	</tr><tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_7">អេ.ភី.អេ APA</span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="http://www.asianparl.net/" target="_blank">
+                <img id="DataList1_Image8_7" src="Images/Slide/apa.png" />
+                </a>
+                </div>
+                </td>
+	</tr><tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_8">អេ.ភី.អេហ្វ APF</span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="http://apf.francophonie.org/" target="_blank">
+                <img id="DataList1_Image8_8" src="Images/Slide/APF.jpg" />
+                </a>
+                </div>
+                </td>
+	</tr><tr>
+		<td>
+                <div class="MenuLeft"><span id="DataList1_SlideNameLabel_9">អង្គការសហប្រជាជាតិ UNDP</span></div>
+                <div style="padding: 5px 0px 0px 0px; margin: -2px 5px -3px 5px; border-style: solid; border-width: 0px 1px 1px 1px; border-color: #25A6E1; width: 198px; ">
+               <a href="http://www.undp.org/content/undp/en/home.html" target="_blank">
+                <img id="DataList1_Image8_9" src="Images/Slide/un.png" />
+                </a>
+                </div>
+                </td>
+	</tr>
+</table>
+        
+    </div>
+    </div>
+
+<!--
+     <div style="border-style: solid; border-width: 0px 0px 2px 0px; border-color: #0085DD; width: 100%; height: 100px; background-color: #25A6E1;"> 
+     <div style="text-align: center; margin: auto; width: 1250px;">
+     <img id="Image20" src="Images/Buttom%20Banner.jpg" height="100" width="1250" />
+     </div>
+     </div>  
+-->
+
+<img id="Image21" src="photos/iptp11-banner2024a.png" height="124" width="1250" />
+
+<!--
+<img id="Image29" src="Images/Banner-23.png" height="161" width="1250" />
+<div align="center" style="background-color: #25A6E1; color: #FFFFFF;  font-size: 12px; line-height: 20px; padding-top: 10px; clear:both;">
+វិថីរដ្ឋសភា សង្កាត់ទន្លេបាសាក់ ខណ្ឌចំការមន រាជធានីភ្នំពេញ ព្រះរាជាណាចក្រកម្ពុជា ទូរសព័្ទ ​លេខ: (855-23) 213 535, 220 628 ទូរសារ: (855-23)220 629
+<br /> សារអេឡិចត្រូនិច: sg@national-assembly.org.kh, sg@nac.org.kh គេហទំព័រ www.national-assembly.org.kh, www.nac.org.kh
+</div>  
+-->
+
+</form>
+</body>
+
+</html>
