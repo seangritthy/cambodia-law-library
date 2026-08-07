@@ -256,7 +256,8 @@ async function openBook(book) {
     updateReaderFavButton();
     updateZoomDisplay();
 
-    const pdfUrl = book.url ? book.url : 'pdfs/' + book.filename;
+    const primaryUrl = book.url ? book.url : 'pdfs/' + book.filename;
+    const localFallbackUrl = 'pdfs/' + book.filename;
 
     try {
         if (pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
@@ -265,11 +266,24 @@ async function openBook(book) {
             pageFlipInstance = null;
         }
 
-        pdfDoc = await pdfjsLib.getDocument({
-            url: pdfUrl,
-            cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-            cMapPacked: true
-        }).promise;
+        try {
+            pdfDoc = await pdfjsLib.getDocument({
+                url: primaryUrl,
+                cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+                cMapPacked: true
+            }).promise;
+        } catch(primaryErr) {
+            console.warn('Primary PDF load failed, trying local fallback:', primaryUrl, primaryErr);
+            if (book.url && book.filename) {
+                pdfDoc = await pdfjsLib.getDocument({
+                    url: localFallbackUrl,
+                    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+                    cMapPacked: true
+                }).promise;
+            } else {
+                throw primaryErr;
+            }
+        }
 
         totalPages = pdfDoc.numPages;
         if (currentPage > totalPages) currentPage = 1;
@@ -284,7 +298,14 @@ async function openBook(book) {
         renderCurrentViewMode();
 
     } catch (err) {
-        readerLoading.innerHTML = `<p style="color:#ef4444;text-align:center;padding:20px;">មិនអាចបើកឯកសារ PDF បានទេ<br><small>${err.message}</small></p>`;
+        readerLoading.innerHTML = `
+            <div style="text-align:center;padding:24px 16px;">
+                <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+                <h3 style="color:#ef4444;margin-bottom:8px;">មិនអាចបើកឯកសារ PDF បានទេ</h3>
+                <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">ឯកសារនេះត្រូវការការតភ្ជាប់អ៊ីនធឺណិត ឬមិនទាន់មានក្នុងប្រព័ន្ធ</p>
+                <button class="btn-primary" onclick="openBook(currentBook)" style="padding:8px 20px;border-radius:20px;cursor:pointer;">🔄 ព្យាយាមម្តងទៀត (Retry)</button>
+            </div>
+        `;
         console.error('PDF load error:', err);
     }
 }
