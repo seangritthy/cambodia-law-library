@@ -34,6 +34,9 @@ jobs:
         run: |
           mkdir -p android/app/src/main/assets/public
           cp -r src/* android/app/src/main/assets/public/
+          mkdir -p android/capacitor-cordova-android-plugins
+          echo "ext {}" > android/capacitor-cordova-android-plugins/cordova.variables.gradle
+          echo "dependencies {}" > android/capacitor-cordova-android-plugins/build.gradle
 
       - name: Make Gradlew Executable
         run: chmod +x android/gradlew
