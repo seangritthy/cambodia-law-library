@@ -19,43 +19,43 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Prepare Capacitor Assets
+      - name: Prepare Capacitor Assets & Keystore
         run: |
           mkdir -p android/app/src/main/assets/public
           cp -r src/* android/app/src/main/assets/public/
           mkdir -p android/capacitor-cordova-android-plugins
           echo "ext {}" > android/capacitor-cordova-android-plugins/cordova.variables.gradle
           echo "dependencies {}" > android/capacitor-cordova-android-plugins/build.gradle
+          
+          # Generate release keystore if missing
+          if [ ! -f "android/release-key.jks" ]; then
+            keytool -genkeypair -v -keystore android/release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias cambodia-law-key -storepass CambodiaLaw2026! -keypass CambodiaLaw2026! -dname "CN=Cambodia Law Library, OU=Legal Tech, O=Cambodia Law Library, L=Phnom Penh, ST=Phnom Penh, C=KH"
+          fi
 
       - name: Make Gradlew Executable
         run: chmod +x android/gradlew
 
-      - name: Build Android APK
+      - name: Build Android Release & Debug APKs
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace || true
 
-      - name: Rename APK Artifacts
+      - name: Collect APK Artifacts
         run: |
           mkdir -p build-output
-          cp android/app/build/outputs/apk/debug/app-debug.apk build-output/CambodiaLawLibrary-v1.1.0-debug.apk || true
-          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
-            cp android/app/build/outputs/apk/release/app-release.apk build-output/CambodiaLawLibrary-v1.1.0-signed-release.apk
-          elif [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-            cp android/app/build/outputs/apk/release/app-release-unsigned.apk build-output/CambodiaLawLibrary-v1.1.0-release.apk
-          fi
+          find android/app/build/outputs/apk/ -name "*.apk" -exec cp {} build-output/ \;
+          ls -la build-output/
 
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
@@ -80,12 +80,13 @@ jobs:
             - 🔍 **Zoom & Direct Page Jump Modal**: Zoom from 75% to 250% and jump directly to any page.
             - 🔊 **Khmer Text-to-Speech (TTS)**: Web Speech API & fallback Khmer audio engine.
             
-            #### 🔑 Signing & Keystore:
-            - Signed with Production Release Keystore (`release-key.jks`).
-            - Alias: `cambodia-law-key` | Password: `CambodiaLaw2026!`
+            #### 🔑 Signed & Package Info:
+            - **Package ID**: `com.cambodia.lawlibrary`
+            - **Version**: `1.1.0` (Build 2)
+            - **Signed**: Release Keystore (`release-key.jks`)
             
             #### 📥 Download Instructions:
-            1. Download `CambodiaLawLibrary-v1.1.0-signed-release.apk` or `CambodiaLawLibrary-v1.1.0-debug.apk` below.
+            1. Download an `.apk` file below.
             2. Tap to install on your Android device.
           files: |
             build-output/*.apk

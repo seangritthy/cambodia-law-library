@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Law Ebook</string>
-    <string name="title_activity_main">Law Ebook</string>
-    <string name="package_name">com.law.ebook</string>
-    <string name="custom_url_scheme">com.law.ebook</string>
+    <string name="app_name">Cambodia Law Library</string>
+    <string name="title_activity_main">Cambodia Law Library</string>
+    <string name="package_name">com.cambodia.lawlibrary</string>
+    <string name="custom_url_scheme">com.cambodia.lawlibrary</string>
 </resources>
