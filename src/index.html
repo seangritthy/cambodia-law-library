@@ -18,12 +18,29 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">Cambodia Law Library</p>
+                        <p class="subtitle">Cambodia Law Library <span id="app-version-badge" class="version-badge">v1.2.4</span></p>
                     </div>
                 </div>
-                <button id="btn-theme-toggle" class="icon-btn" title="ប្តូរប្រធានបទ (Switch Theme)" onclick="toggleTheme()">
-                    <span id="theme-icon">🌙</span>
-                </button>
+                <div class="header-actions">
+                    <button id="btn-check-update" class="icon-btn" title="ពិនិត្យមើលអាប់ដេត (Check Updates)" onclick="checkForUpdates(true)">
+                        <span>🔄</span>
+                    </button>
+                    <button id="btn-theme-toggle" class="icon-btn" title="ប្តូរប្រធានបទ (Switch Theme)" onclick="toggleTheme()">
+                        <span id="theme-icon">🌙</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- In-App Update Notification Banner -->
+            <div id="update-banner" class="update-banner hidden">
+                <div class="update-banner-content">
+                    <span class="update-icon">🚀</span>
+                    <div class="update-text">
+                        <strong>មានជំនាន់ថ្មី <span id="update-banner-tag">v1.2.5</span>!</strong>
+                        <p>សូមអាប់ដេតកម្មវិធីដើម្បីទទួលបានលក្ខណៈពិសេសថ្មីៗ</p>
+                    </div>
+                </div>
+                <button class="btn-update-now" onclick="openUpdateModal()">អាប់ដេត (Update)</button>
             </div>
 
             <!-- Search & Filter Controls -->
@@ -142,6 +159,40 @@
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closePageJumpModal()">បោះបង់</button>
                 <button class="btn-primary" onclick="executePageJump()">ទៅកាន់ទំព័រ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: App Update Dialog -->
+    <div id="modal-update" class="modal-overlay hidden" onclick="closeUpdateModal(event)">
+        <div class="modal-card update-modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="update-title-group">
+                    <span class="update-hero-icon">🚀</span>
+                    <div>
+                        <h3>អាប់ដេតកម្មវិធី (App Update)</h3>
+                        <p class="sub-text">ជំនាន់ថ្មី <span id="modal-update-tag" class="tag-badge">v1.2.5</span></p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" onclick="closeUpdateModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="update-changelog-box" class="changelog-box">
+                    <!-- Release notes loaded from GitHub -->
+                </div>
+                <div class="update-instructions">
+                    <p><strong>💡 របៀបដំឡើង (How to Install):</strong></p>
+                    <ol>
+                        <li>ចុចប៊ូតុង <strong>"ទាញយកនិងដំឡើង APK"</strong> ខាងក្រោម</li>
+                        <li>បន្ទាប់ពីទាញយកចប់ ចុចលើឯកសារ `.apk` ដើម្បីដំឡើងបន្ត</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeUpdateModal()">ទុកពេលក្រោយ (Later)</button>
+                <button id="btn-download-apk" class="btn-primary btn-download-update" onclick="downloadAndInstallUpdate()">
+                    ⬇️ ទាញយកនិងដំឡើង APK
+                </button>
             </div>
         </div>
     </div>

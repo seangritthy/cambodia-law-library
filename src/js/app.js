@@ -744,5 +744,89 @@ function showToast(message) {
 }
 
 // === Init ===
-document.addEventListener('DOMContentLoaded', loadLibrary);
+document.addEventListener('DOMContentLoaded', () => {
+    loadLibrary();
+    setTimeout(() => checkForUpdates(false), 2000);
+});
+
+// === IN-APP UPDATER (GITHUB RELEASES) ===
+const CURRENT_VERSION = '1.2.4';
+const GITHUB_REPO = 'seangritthy/cambodia-law-library';
+let latestReleaseData = null;
+
+async function checkForUpdates(manual = false) {
+    if (manual) showToast('កំពុងពិនិត្យមើលអាប់ដេត...');
+    try {
+        const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+        if (!res.ok) {
+            if (manual) showToast('មិនអាចភ្ជាប់ទៅកាន់ប្រព័ន្ធអាប់ដេតបានទេ');
+            return;
+        }
+        const release = await res.json();
+        latestReleaseData = release;
+        const latestTag = release.tag_name ? release.tag_name.replace(/^v/, '') : '';
+
+        if (latestTag && isNewerVersion(latestTag, CURRENT_VERSION)) {
+            document.getElementById('update-banner-tag').textContent = 'v' + latestTag;
+            document.getElementById('update-banner').classList.remove('hidden');
+            if (manual) openUpdateModal();
+        } else {
+            if (manual) showToast('កម្មវិធីរបស់អ្នកជាជំនាន់ចុងក្រោយបង្អស់ហើយ! (Up to date)');
+        }
+    } catch(e) {
+        console.error('Update check error:', e);
+        if (manual) showToast('មិនមានការភ្ជាប់អ៊ីនធឺណិតទេ');
+    }
+}
+
+function isNewerVersion(latest, current) {
+    const l = latest.split('.').map(n => parseInt(n, 10) || 0);
+    const c = current.split('.').map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(l.length, c.length); i++) {
+        const lVal = l[i] || 0;
+        const cVal = c[i] || 0;
+        if (lVal > cVal) return true;
+        if (lVal < cVal) return false;
+    }
+    return false;
+}
+
+function openUpdateModal() {
+    if (!latestReleaseData) return;
+    const tag = latestReleaseData.tag_name || '';
+    document.getElementById('modal-update-tag').textContent = tag;
+    
+    const bodyText = latestReleaseData.body || 'មានការកែលម្អនិងបំពេញបន្ថែមជំនាន់ថ្មី។';
+    document.getElementById('update-changelog-box').innerText = bodyText;
+
+    document.getElementById('modal-update').classList.remove('hidden');
+}
+
+function closeUpdateModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('modal-update').classList.add('hidden');
+}
+
+function downloadAndInstallUpdate() {
+    if (!latestReleaseData) return;
+    let apkUrl = null;
+
+    if (latestReleaseData.assets && latestReleaseData.assets.length > 0) {
+        const apkAsset = latestReleaseData.assets.find(a => a.name.endsWith('.apk'));
+        if (apkAsset) apkUrl = apkAsset.browser_download_url;
+    }
+
+    if (!apkUrl) {
+        apkUrl = latestReleaseData.html_url || `https://github.com/${GITHUB_REPO}/releases/latest`;
+    }
+
+    showToast('កំពុងបើកការទាញយក APK...');
+    
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        window.open(apkUrl, '_system');
+    } else {
+        window.location.href = apkUrl;
+    }
+}
+
 
