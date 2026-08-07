@@ -47,8 +47,12 @@ jobs:
       - name: Rename APK Artifacts
         run: |
           mkdir -p build-output
-          cp android/app/build/outputs/apk/debug/app-debug.apk build-output/CambodiaLawLibrary-v1.1.0-debug.apk
-          cp android/app/build/outputs/apk/release/app-release-unsigned.apk build-output/CambodiaLawLibrary-v1.1.0-release-unsigned.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk build-output/CambodiaLawLibrary-v1.1.0-debug.apk || true
+          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk build-output/CambodiaLawLibrary-v1.1.0-signed-release.apk
+          elif [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+            cp android/app/build/outputs/apk/release/app-release-unsigned.apk build-output/CambodiaLawLibrary-v1.1.0-release.apk
+          fi
 
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
@@ -73,11 +77,14 @@ jobs:
             - 🔍 **Zoom & Direct Page Jump Modal**: Zoom from 75% to 250% and jump directly to any page.
             - 🔊 **Khmer Text-to-Speech (TTS)**: Web Speech API & fallback Khmer audio engine.
             
+            #### 🔑 Signing & Keystore:
+            - Signed with Production Release Keystore (`release-key.jks`).
+            - Alias: `cambodia-law-key` | Password: `CambodiaLaw2026!`
+            
             #### 📥 Download Instructions:
-            1. Download `CambodiaLawLibrary-v1.1.0-debug.apk` or `CambodiaLawLibrary-v1.1.0-release-unsigned.apk` below.
+            1. Download `CambodiaLawLibrary-v1.1.0-signed-release.apk` or `CambodiaLawLibrary-v1.1.0-debug.apk` below.
             2. Tap to install on your Android device.
           files: |
-            build-output/CambodiaLawLibrary-v1.1.0-debug.apk
-            build-output/CambodiaLawLibrary-v1.1.0-release-unsigned.apk
+            build-output/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

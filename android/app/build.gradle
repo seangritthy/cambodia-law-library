@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.law.ebook"
+    namespace = "com.cambodia.lawlibrary"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.law.ebook"
+        applicationId "com.cambodia.lawlibrary"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,10 +18,17 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file("../../release.keystore")
-            storePassword "Rithylove71#"
-            keyAlias "bongbeegta"
-            keyPassword "Rithylove71#"
+            if (file('../release-key.jks').exists()) {
+                storeFile file('../release-key.jks')
+                storePassword "CambodiaLaw2026!"
+                keyAlias "cambodia-law-key"
+                keyPassword "CambodiaLaw2026!"
+            } else if (file("../../release.keystore").exists()) {
+                storeFile file("../../release.keystore")
+                storePassword "Rithylove71#"
+                keyAlias "bongbeegta"
+                keyPassword "Rithylove71#"
+            }
         }
     }
     buildTypes {
