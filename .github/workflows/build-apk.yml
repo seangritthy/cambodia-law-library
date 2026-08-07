@@ -9,10 +9,15 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Code
@@ -37,7 +42,6 @@ jobs:
           echo "ext {}" > android/capacitor-cordova-android-plugins/cordova.variables.gradle
           echo "dependencies {}" > android/capacitor-cordova-android-plugins/build.gradle
           
-          # Generate release keystore if missing
           if [ ! -f "android/release-key.jks" ]; then
             keytool -genkeypair -v -keystore android/release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias cambodia-law-key -storepass CambodiaLaw2026! -keypass CambodiaLaw2026! -dname "CN=Cambodia Law Library, OU=Legal Tech, O=Cambodia Law Library, L=Phnom Penh, ST=Phnom Penh, C=KH"
           fi
