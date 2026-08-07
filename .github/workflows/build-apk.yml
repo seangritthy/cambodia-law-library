@@ -47,7 +47,7 @@ jobs:
           cp -r src/* android/app/src/main/assets/public/
           npx cap sync android || true
           mkdir -p android/capacitor-cordova-android-plugins
-          echo "ext {}" > android/capacitor-cordova-android-plugins/cordova.variables.gradle
+          printf 'ext {\n    cdvPluginPostBuildExtras = []\n}\n' > android/capacitor-cordova-android-plugins/cordova.variables.gradle
           
           if [ ! -f "android/release-key.jks" ]; then
             keytool -genkeypair -v -keystore android/release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias cambodia-law-key -storepass CambodiaLaw2026! -keypass CambodiaLaw2026! -dname "CN=Cambodia Law Library, OU=Legal Tech, O=Cambodia Law Library, L=Phnom Penh, ST=Phnom Penh, C=KH"
