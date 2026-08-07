@@ -1,6 +1,6 @@
 {
-  "appId": "com.law.ebook",
-  "appName": "Law Ebook",
+  "appId": "com.cambodia.lawlibrary",
+  "appName": "Cambodia Law Library",
   "webDir": "src",
   "plugins": {
     "CapacitorHttp": {

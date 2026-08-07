@@ -1,49 +1,157 @@
 <!DOCTYPE html>
-<html lang="km">
+<html lang="km" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>បណ្ណាល័យច្បាប់កម្ពុជា</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&family=Moul&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>បណ្ណាល័យច្បាប់កម្ពុជា - Cambodia Law Library</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Moul&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
+<body class="theme-dark">
 
     <!-- SCREEN 1: Library -->
     <div id="screen-library">
-        <div class="lib-header">
-            <div class="lib-logo">⚖️</div>
-            <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-            <p>ជ្រើសរើសសៀវភៅដើម្បីអាន</p>
+        <!-- Top Sticky Header & Controls -->
+        <header class="lib-header">
+            <div class="header-top-row">
+                <div class="lib-brand">
+                    <span class="lib-logo">⚖️</span>
+                    <div>
+                        <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
+                        <p class="subtitle">Cambodia Law Library</p>
+                    </div>
+                </div>
+                <button id="btn-theme-toggle" class="icon-btn" title="ប្តូរប្រធានបទ (Switch Theme)" onclick="toggleTheme()">
+                    <span id="theme-icon">🌙</span>
+                </button>
+            </div>
+
+            <!-- Search & Filter Controls -->
+            <div class="search-box-container">
+                <div class="search-input-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search-input" placeholder="ស្វែងរកច្បាប់, ក្រម, ព្រះរាជក្រឹត្យ..." oninput="onSearchInput(this.value)">
+                    <button id="btn-search-clear" class="search-clear-btn hidden" onclick="clearSearch()">✕</button>
+                </div>
+            </div>
+
+            <!-- Category Pills -->
+            <div class="filter-pills-scroll">
+                <button class="filter-pill active" data-category="all" onclick="setCategoryFilter('all')">ទាំងអស់ <span id="count-all" class="pill-badge">0</span></button>
+                <button class="filter-pill" data-category="fav" onclick="setCategoryFilter('fav')">❤️ ចូលចិត្ត <span id="count-fav" class="pill-badge">0</span></button>
+                <button class="filter-pill" data-category="code" onclick="setCategoryFilter('code')">ក្រម</button>
+                <button class="filter-pill" data-category="law" onclick="setCategoryFilter('law')">ច្បាប់</button>
+                <button class="filter-pill" data-category="royal" onclick="setCategoryFilter('royal')">ព្រះរាជក្រឹត្យ</button>
+                <button class="filter-pill" data-category="sub" onclick="setCategoryFilter('sub')">អនុក្រឹត្យ</button>
+            </div>
+
+            <div class="stats-bar">
+                <span id="library-count-text">កំពុងបង្ហាញសៀវភៅ...</span>
+            </div>
+        </header>
+
+        <!-- Main Book Grid -->
+        <main id="library-grid" class="lib-grid"></main>
+
+        <!-- Empty State -->
+        <div id="library-empty" class="empty-state hidden">
+            <div class="empty-icon">🔎</div>
+            <h3>រកមិនឃើញសៀវភៅទេ</h3>
+            <p>សូមព្យាយាមស្វែងរកពាក្យគន្លឹះផ្សេងទៀត ឬលុបការចម្រោះ</p>
+            <button class="btn-secondary" onclick="clearSearch()">បង្ហាញសៀវភៅទាំងអស់</button>
         </div>
-        <div id="library-grid" class="lib-grid"></div>
     </div>
 
     <!-- SCREEN 2: Reader -->
     <div id="screen-reader" class="hidden">
+        <!-- Top Reader Navbar -->
         <div class="reader-topbar">
-            <div id="book-title-bar">...</div>
-            <div id="page-indicator">-- / --</div>
+            <button id="btn-reader-back" class="nav-icon-btn" onclick="closeBook()" title="ត្រឡប់ក្រោយ (Home)">
+                🏠 <span>ផ្ទះ</span>
+            </button>
+            
+            <div id="book-title-bar" class="reader-title">...</div>
+            
+            <div class="reader-actions">
+                <button id="btn-reader-fav" class="icon-btn-sm" onclick="toggleCurrentBookFavorite()" title="រក្សាទុកក្នុងបញ្ជីចូលចិត្ត">
+                    🤍
+                </button>
+                <button id="btn-mode-toggle" class="icon-btn-sm" onclick="toggleReaderMode()" title="ប្តូររបៀបមើល (Scroll / Page Flip)">
+                    📜
+                </button>
+                <button id="page-indicator" class="page-badge-btn" onclick="openPageJumpModal()" title="រំលងទៅទំព័រ">
+                    1 / --
+                </button>
+            </div>
         </div>
 
+        <!-- Secondary Toolbar: Zoom & Reading Theme -->
+        <div class="reader-subbar">
+            <div class="subbar-group">
+                <button class="sub-btn" onclick="zoomOut()" title="បង្រួម (Zoom Out)">➖</button>
+                <span id="zoom-level-text" class="subbar-label">100%</span>
+                <button class="sub-btn" onclick="zoomIn()" title="ពង្រីក (Zoom In)">➕</button>
+                <button class="sub-btn" onclick="resetZoom()" title="ទំហំដើម">🔄</button>
+            </div>
+            
+            <div class="subbar-group">
+                <button id="btn-reader-theme" class="sub-btn theme-pill" onclick="cycleReaderFilter()" title="ពណ៌ទំព័រ (Theme Filter)">
+                    <span>🎨</span> <span id="reader-filter-label">ធម្មតា</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
         <div id="reader-loading" class="reader-loading">
             <div class="spinner"></div>
-            <p>កំពុងផ្ទុក...</p>
+            <p id="loading-status-text">កំពុងផ្ទុកឯកសារ PDF...</p>
         </div>
 
+        <!-- Scroll View Container -->
         <div id="pdf-scroll-container" class="pdf-scroll-container hidden">
             <div id="pdf-pages-wrapper"></div>
         </div>
 
+        <!-- PageFlip Canvas View Container -->
+        <div id="pdf-flip-container" class="pdf-flip-container hidden">
+            <div id="pageflip-wrapper" class="pageflip-wrapper"></div>
+        </div>
+
+        <!-- Reader Bottom Navbar -->
         <div class="reader-bottombar">
-            <button id="btn-home" onclick="closeBook()">🏠 ផ្ទះ</button>
-            <button id="btn-prev" onclick="prevPage()">◀ មុន</button>
-            <button id="btn-tts" onclick="toggleRead()">🔊 អាន</button>
-            <button id="btn-next" onclick="nextPage()">បន្ទាប់ ▶</button>
+            <button id="btn-prev" class="btn-nav" onclick="prevPage()">◀ មុន</button>
+            <button id="btn-tts" class="btn-tts-main" onclick="toggleRead()">🔊 អានអត្ថបទ</button>
+            <button id="btn-next" class="btn-nav" onclick="nextPage()">បន្ទាប់ ▶</button>
         </div>
     </div>
 
+    <!-- MODAL: Page Jump Dialog -->
+    <div id="modal-page-jump" class="modal-overlay hidden" onclick="closePageJumpModal(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>រំលងទៅទំព័រ (Jump to Page)</h3>
+                <button class="modal-close-btn" onclick="closePageJumpModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-row">
+                    <label for="jump-input">បញ្ចូលលេខទំព័រ (1 - <span id="jump-max-page">1</span>):</label>
+                    <input type="number" id="jump-input" min="1" max="1" value="1" onkeydown="if(event.key==='Enter') executePageJump()">
+                </div>
+                <input type="range" id="jump-slider" min="1" max="1" value="1" oninput="syncJumpInput(this.value)">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closePageJumpModal()">បោះបង់</button>
+                <button class="btn-primary" onclick="executePageJump()">ទៅកាន់ទំព័រ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-container" class="toast-container"></div>
+
     <script src="js/pdf.min.js"></script>
+    <script src="js/page-flip.browser.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
+

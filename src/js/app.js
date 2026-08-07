@@ -2,72 +2,268 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/pdf.worker.min.js';
 
 // === State ===
+let allBooks = [];
+let filteredBooks = [];
+let favoriteBookIds = new Set();
+let activeCategory = 'all';
+let searchQuery = '';
+
 let pdfDoc = null;
 let currentPage = 1;
 let totalPages = 0;
 let isReading = false;
-let currentAudio = null;
 let currentBook = null;
 
-// === DOM ===
+let zoomLevel = 1.0; // 100%
+let viewMode = 'scroll'; // 'scroll' | 'flip'
+let pageFlipInstance = null;
+let readerThemeFilter = 'normal'; // 'normal' | 'sepia' | 'dark'
+
+// === DOM Cache ===
 const screenLibrary = document.getElementById('screen-library');
 const screenReader = document.getElementById('screen-reader');
 const libraryGrid = document.getElementById('library-grid');
+const libraryEmpty = document.getElementById('library-empty');
+const searchInput = document.getElementById('search-input');
+const btnSearchClear = document.getElementById('btn-search-clear');
+
 const bookTitleBar = document.getElementById('book-title-bar');
 const pageIndicator = document.getElementById('page-indicator');
 const readerLoading = document.getElementById('reader-loading');
+const loadingStatusText = document.getElementById('loading-status-text');
+
 const pdfScrollContainer = document.getElementById('pdf-scroll-container');
 const pdfPagesWrapper = document.getElementById('pdf-pages-wrapper');
+const pdfFlipContainer = document.getElementById('pdf-flip-container');
+const pageflipWrapper = document.getElementById('pageflip-wrapper');
+
 const btnTts = document.getElementById('btn-tts');
+const btnReaderFav = document.getElementById('btn-reader-fav');
+const btnModeToggle = document.getElementById('btn-mode-toggle');
+const btnReaderTheme = document.getElementById('btn-reader-theme');
+const readerFilterLabel = document.getElementById('reader-filter-label');
+const zoomLevelText = document.getElementById('zoom-level-text');
+
+// === Init & Storage ===
+function initStorage() {
+    try {
+        const savedFavs = JSON.parse(localStorage.getItem('cambodia_law_favs') || '[]');
+        favoriteBookIds = new Set(savedFavs);
+        
+        const savedTheme = localStorage.getItem('cambodia_law_theme') || 'dark';
+        applyTheme(savedTheme);
+    } catch(e) {
+        console.error('Storage init error:', e);
+    }
+}
+
+function saveFavorites() {
+    try {
+        localStorage.setItem('cambodia_law_favs', JSON.stringify(Array.from(favoriteBookIds)));
+    } catch(e) {}
+}
+
+function getBookLastPage(bookId) {
+    return parseInt(localStorage.getItem(`law_book_last_page_${bookId}`) || '1', 10);
+}
+
+function saveBookLastPage(bookId, pageNum) {
+    if (bookId && pageNum > 0) {
+        localStorage.setItem(`law_book_last_page_${bookId}`, pageNum.toString());
+    }
+}
 
 // === Load Library ===
 async function loadLibrary() {
+    initStorage();
     try {
         const res = await fetch('library.json');
-        const books = await res.json();
-        libraryGrid.innerHTML = '';
-        books.forEach(book => {
-            const card = document.createElement('div');
-            card.className = book.color ? `book-card book-${book.color}` : 'book-card';
-            card.innerHTML = `
-                <div class="book-spine"></div>
-                <div class="book-cover-content">
-                    <div class="book-emblem">⚖️</div>
-                    <div class="book-title-gold">${book.title}</div>
-                    <div class="book-bottom-stripe">ព្រះរាជាណាចក្រកម្ពុជា</div>
-                </div>
-            `;
-            card.addEventListener('click', () => openBook(book));
-            libraryGrid.appendChild(card);
+        allBooks = await res.json();
+        
+        // Auto-assign category & color fallback if not present
+        allBooks.forEach(b => {
+            if (!b.category) {
+                if (b.title.includes('ក្រម')) b.category = 'code';
+                else if (b.title.includes('ព្រះរាជក្រឹត្យ')) b.category = 'royal';
+                else if (b.title.includes('អនុក្រឹត្យ')) b.category = 'sub';
+                else b.category = 'law';
+            }
+            if (!b.color) {
+                if (b.category === 'code') b.color = 'gold';
+                else if (b.category === 'royal') b.color = 'yellow';
+                else if (b.category === 'sub') b.color = 'green';
+                else b.color = 'blue';
+            }
         });
+
+        renderLibrary();
     } catch (e) {
-        libraryGrid.innerHTML = '<p style="color:#ef4444;padding:20px;text-align:center;">មិនអាចផ្ទុកបណ្ណាល័យបានទេ</p>';
+        libraryGrid.innerHTML = '<p style="color:#ef4444;padding:20px;text-align:center;">មិនអាចផ្ទុកបណ្ណាល័យបានទេ (Failed to load library)</p>';
         console.error('Library load error:', e);
     }
+}
+
+// === Render Library Grid ===
+function renderLibrary() {
+    // Filter books
+    filteredBooks = allBooks.filter(book => {
+        // Category check
+        let matchCat = false;
+        if (activeCategory === 'all') matchCat = true;
+        else if (activeCategory === 'fav') matchCat = favoriteBookIds.has(book.id);
+        else matchCat = (book.category === activeCategory);
+
+        // Search check
+        let matchSearch = true;
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            matchSearch = book.title.toLowerCase().includes(q) || (book.filename && book.filename.toLowerCase().includes(q));
+        }
+
+        return matchCat && matchSearch;
+    });
+
+    // Update Counts & Badges
+    document.getElementById('count-all').textContent = allBooks.length;
+    document.getElementById('count-fav').textContent = favoriteBookIds.size;
+    document.getElementById('library-count-text').textContent = `កំពុងបង្ហាញ ${filteredBooks.length} ក្នុងចំណោម ${allBooks.length} សៀវភៅ`;
+
+    // Clear Grid
+    libraryGrid.innerHTML = '';
+
+    if (filteredBooks.length === 0) {
+        libraryEmpty.classList.remove('hidden');
+        return;
+    }
+    libraryEmpty.classList.add('hidden');
+
+    filteredBooks.forEach(book => {
+        const isFav = favoriteBookIds.has(book.id);
+        const card = document.createElement('div');
+        card.className = book.color ? `book-card book-${book.color}` : 'book-card';
+        card.innerHTML = `
+            <button class="book-fav-btn" onclick="event.stopPropagation(); toggleBookFavorite(${book.id})" title="ចូលចិត្ត">
+                ${isFav ? '❤️' : '🤍'}
+            </button>
+            <div class="book-spine"></div>
+            <div class="book-cover-content">
+                <div class="book-emblem">⚖️</div>
+                <div class="book-title-gold">${book.title}</div>
+                <div class="book-bottom-stripe">ព្រះរាជាណាចក្រកម្ពុជា</div>
+            </div>
+        `;
+        card.addEventListener('click', () => openBook(book));
+        libraryGrid.appendChild(card);
+    });
+}
+
+// === Search & Category Handlers ===
+function onSearchInput(val) {
+    searchQuery = val.trim();
+    btnSearchClear.classList.toggle('hidden', searchQuery.length === 0);
+    renderLibrary();
+}
+
+function clearSearch() {
+    searchQuery = '';
+    searchInput.value = '';
+    btnSearchClear.classList.add('hidden');
+    renderLibrary();
+}
+
+function setCategoryFilter(cat) {
+    activeCategory = cat;
+    document.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === cat);
+    });
+    renderLibrary();
+}
+
+// === Favorite Bookmarks ===
+function toggleBookFavorite(bookId) {
+    if (favoriteBookIds.has(bookId)) {
+        favoriteBookIds.delete(bookId);
+        showToast('បានលុបចេញពីបញ្ជីចូលចិត្ត');
+    } else {
+        favoriteBookIds.add(bookId);
+        showToast('បានរក្សាទុកក្នុងបញ្ជីចូលចិត្ត ❤️');
+    }
+    saveFavorites();
+    renderLibrary();
+    if (currentBook && currentBook.id === bookId) {
+        updateReaderFavButton();
+    }
+}
+
+function toggleCurrentBookFavorite() {
+    if (currentBook) {
+        toggleBookFavorite(currentBook.id);
+    }
+}
+
+function updateReaderFavButton() {
+    if (currentBook && favoriteBookIds.has(currentBook.id)) {
+        btnReaderFav.textContent = '❤️';
+    } else {
+        btnReaderFav.textContent = '🤍';
+    }
+}
+
+// === Global Themes ===
+function toggleTheme() {
+    const currentTheme = document.body.className.includes('theme-light') ? 'light' : 
+                         document.body.className.includes('theme-sepia') ? 'sepia' : 'dark';
+    let nextTheme = 'dark';
+    if (currentTheme === 'dark') nextTheme = 'sepia';
+    else if (currentTheme === 'sepia') nextTheme = 'light';
+    else nextTheme = 'dark';
+
+    applyTheme(nextTheme);
+    localStorage.setItem('cambodia_law_theme', nextTheme);
+}
+
+function applyTheme(theme) {
+    document.body.classList.remove('theme-dark', 'theme-light', 'theme-sepia');
+    document.body.classList.add(`theme-${theme}`);
+    document.documentElement.setAttribute('data-theme', theme);
+
+    const iconMap = { dark: '🌙', sepia: '📜', light: '☀️' };
+    const iconSpan = document.getElementById('theme-icon');
+    if (iconSpan) iconSpan.textContent = iconMap[theme] || '🌙';
 }
 
 // === Open Book ===
 async function openBook(book) {
     currentBook = book;
-    currentPage = 1;
+    const lastSavedPage = getBookLastPage(book.id);
+    currentPage = lastSavedPage > 0 ? lastSavedPage : 1;
     isReading = false;
+    zoomLevel = 1.0;
 
-    // Show reader, hide library
     screenLibrary.classList.add('hidden');
     screenReader.classList.remove('hidden');
 
     bookTitleBar.textContent = book.title;
-    pageIndicator.textContent = '-- / --';
-    pdfPagesWrapper.innerHTML = '';
+    pageIndicator.textContent = `${currentPage} / --`;
+    loadingStatusText.textContent = 'កំពុងផ្ទុកឯកសារ PDF...';
     readerLoading.classList.remove('hidden');
+    
     pdfScrollContainer.classList.add('hidden');
-    btnTts.textContent = '🔊 អាន';
+    pdfFlipContainer.classList.add('hidden');
+    
+    btnTts.textContent = '🔊 អានអត្ថបទ';
     btnTts.classList.remove('reading');
+    updateReaderFavButton();
+    updateZoomDisplay();
 
     const pdfUrl = book.url ? book.url : 'pdfs/' + book.filename;
 
     try {
         if (pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
+        if (pageFlipInstance) {
+            try { pageFlipInstance.destroy(); } catch(e) {}
+            pageFlipInstance = null;
+        }
 
         pdfDoc = await pdfjsLib.getDocument({
             url: pdfUrl,
@@ -76,23 +272,16 @@ async function openBook(book) {
         }).promise;
 
         totalPages = pdfDoc.numPages;
-        pageIndicator.textContent = `1 / ${totalPages}`;
+        if (currentPage > totalPages) currentPage = 1;
 
+        pageIndicator.textContent = `${currentPage} / ${totalPages}`;
         readerLoading.classList.add('hidden');
-        pdfScrollContainer.classList.remove('hidden');
 
-        // Render first 3 pages immediately
-        for (let i = 1; i <= Math.min(3, totalPages); i++) {
-            await renderPage(i);
+        if (lastSavedPage > 1) {
+            showToast(`បន្តពីទំព័រទី ${lastSavedPage}`);
         }
 
-        // Render the rest in background
-        for (let i = 4; i <= totalPages; i++) {
-            renderPage(i);
-        }
-
-        // Track current page on scroll
-        pdfScrollContainer.addEventListener('scroll', onScroll);
+        renderCurrentViewMode();
 
     } catch (err) {
         readerLoading.innerHTML = `<p style="color:#ef4444;text-align:center;padding:20px;">មិនអាចបើកឯកសារ PDF បានទេ<br><small>${err.message}</small></p>`;
@@ -100,16 +289,62 @@ async function openBook(book) {
     }
 }
 
-// === Render a single page ===
-async function renderPage(pageNum) {
+// === View Mode Controller (Scroll vs PageFlip) ===
+function toggleReaderMode() {
+    viewMode = (viewMode === 'scroll') ? 'flip' : 'scroll';
+    btnModeToggle.textContent = (viewMode === 'scroll') ? '📜' : '📖';
+    showToast((viewMode === 'scroll') ? 'របៀបរមូរ (Scroll View)' : 'របៀបប្រលេចទំព័រ (Page Flip View)');
+    renderCurrentViewMode();
+}
+
+function renderCurrentViewMode() {
+    if (viewMode === 'scroll') {
+        pdfFlipContainer.classList.add('hidden');
+        pdfScrollContainer.classList.remove('hidden');
+        initScrollView();
+    } else {
+        pdfScrollContainer.classList.add('hidden');
+        pdfFlipContainer.classList.remove('hidden');
+        initPageFlipView();
+    }
+}
+
+// === SCROLL VIEW IMPLEMENTATION ===
+async function initScrollView() {
+    pdfPagesWrapper.innerHTML = '';
+    pdfScrollContainer.removeEventListener('scroll', onScroll);
+
+    // Render first 3 pages near target page
+    const startP = Math.max(1, currentPage - 1);
+    const endP = Math.min(totalPages, currentPage + 2);
+
+    for (let i = startP; i <= endP; i++) {
+        await renderScrollPage(i);
+    }
+
+    // Scroll to target page
+    scrollToPage(currentPage);
+
+    // Render remaining pages in background
+    for (let i = 1; i <= totalPages; i++) {
+        if (i < startP || i > endP) {
+            renderScrollPage(i);
+        }
+    }
+
+    pdfScrollContainer.addEventListener('scroll', onScroll);
+}
+
+async function renderScrollPage(pageNum) {
+    if (document.getElementById(`page-wrapper-${pageNum}`)) return;
+
     try {
         const page = await pdfDoc.getPage(pageNum);
         const containerWidth = pdfScrollContainer.clientWidth - 16;
         const viewport = page.getViewport({ scale: 1 });
 
-        // Use 2x pixel ratio for crisp, clear text on mobile screens
         const devicePixelRatio = window.devicePixelRatio || 2;
-        const scale = (containerWidth / viewport.width) * devicePixelRatio;
+        const scale = (containerWidth / viewport.width) * devicePixelRatio * zoomLevel;
         const scaledViewport = page.getViewport({ scale });
 
         const wrapper = document.createElement('div');
@@ -117,16 +352,26 @@ async function renderPage(pageNum) {
         wrapper.id = `page-wrapper-${pageNum}`;
 
         const canvas = document.createElement('canvas');
-        // Canvas draws at high resolution
         canvas.width = scaledViewport.width;
         canvas.height = scaledViewport.height;
-        // But CSS displays it at normal size (2x sharper)
         canvas.style.width = (scaledViewport.width / devicePixelRatio) + 'px';
         canvas.style.height = (scaledViewport.height / devicePixelRatio) + 'px';
         canvas.id = `canvas-${pageNum}`;
 
         wrapper.appendChild(canvas);
-        pdfPagesWrapper.appendChild(wrapper);
+
+        // Maintain ascending order
+        let inserted = false;
+        const existing = pdfPagesWrapper.children;
+        for (let el of existing) {
+            const pId = parseInt(el.id.replace('page-wrapper-', ''), 10);
+            if (pageNum < pId) {
+                pdfPagesWrapper.insertBefore(wrapper, el);
+                inserted = true;
+                break;
+            }
+        }
+        if (!inserted) pdfPagesWrapper.appendChild(wrapper);
 
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
@@ -135,23 +380,108 @@ async function renderPage(pageNum) {
     }
 }
 
-// === Scroll tracking ===
+// === PAGEFLIP VIEW IMPLEMENTATION ===
+async function initPageFlipView() {
+    pageflipWrapper.innerHTML = '';
+    if (pageFlipInstance) {
+        try { pageFlipInstance.destroy(); } catch(e) {}
+        pageFlipInstance = null;
+    }
+
+    const containerWidth = pdfFlipContainer.clientWidth;
+    const containerHeight = pdfFlipContainer.clientHeight;
+
+    const flipDiv = document.createElement('div');
+    flipDiv.id = 'pageflip-canvas-container';
+    flipDiv.className = 'stf__parent';
+    pageflipWrapper.appendChild(flipDiv);
+
+    // Create page elements
+    const pageElements = [];
+    for (let i = 1; i <= totalPages; i++) {
+        const pageWrapper = document.createElement('div');
+        pageWrapper.className = 'pdf-page-wrapper pageflip-page';
+        pageWrapper.style.width = '100%';
+        pageWrapper.style.height = '100%';
+
+        const canvas = document.createElement('canvas');
+        canvas.id = `flip-canvas-${i}`;
+        pageWrapper.appendChild(canvas);
+        flipDiv.appendChild(pageWrapper);
+        pageElements.push(pageWrapper);
+    }
+
+    // Initialize St.PageFlip
+    pageFlipInstance = new St.PageFlip(flipDiv, {
+        width: Math.min(containerWidth, 600),
+        height: Math.min(containerHeight, 800),
+        size: 'stretch',
+        minWidth: 280,
+        maxWidth: 1000,
+        minHeight: 400,
+        maxHeight: 1200,
+        drawShadow: true,
+        showCover: false,
+        usePortrait: true
+    });
+
+    pageFlipInstance.loadFromHTML(pageElements);
+
+    // Render pages
+    for (let i = 1; i <= totalPages; i++) {
+        renderFlipPageCanvas(i);
+    }
+
+    pageFlipInstance.on('flip', (e) => {
+        currentPage = e.data + 1;
+        pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+        saveBookLastPage(currentBook ? currentBook.id : null, currentPage);
+        if (isReading) stopReading();
+    });
+
+    if (currentPage > 1) {
+        setTimeout(() => {
+            try { pageFlipInstance.turnToPage(currentPage - 1); } catch(e) {}
+        }, 300);
+    }
+}
+
+async function renderFlipPageCanvas(pageNum) {
+    const canvas = document.getElementById(`flip-canvas-${pageNum}`);
+    if (!canvas) return;
+
+    try {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 * zoomLevel });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    } catch(e) {
+        console.error(`Error rendering flip canvas ${pageNum}:`, e);
+    }
+}
+
+// === Scroll Tracking ===
 function onScroll() {
-    if (!pdfDoc) return;
+    if (!pdfDoc || viewMode !== 'scroll') return;
     const wrappers = pdfPagesWrapper.querySelectorAll('.pdf-page-wrapper');
     const containerLeft = pdfScrollContainer.scrollLeft;
     let closestPage = 1;
     let closestDist = Infinity;
-    wrappers.forEach((w, i) => {
+    wrappers.forEach((w) => {
+        const pId = parseInt(w.id.replace('page-wrapper-', ''), 10);
         const dist = Math.abs(w.offsetLeft - containerLeft);
         if (dist < closestDist) {
             closestDist = dist;
-            closestPage = i + 1;
+            closestPage = pId;
         }
     });
     if (closestPage !== currentPage) {
         currentPage = closestPage;
         pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+        saveBookLastPage(currentBook ? currentBook.id : null, currentPage);
         if (isReading) stopReading();
     }
 }
@@ -160,33 +490,132 @@ function onScroll() {
 function prevPage() {
     if (!pdfDoc || currentPage <= 1) return;
     currentPage--;
-    scrollToPage(currentPage);
+    jumpToPage(currentPage);
 }
 
 function nextPage() {
     if (!pdfDoc || currentPage >= totalPages) return;
     currentPage++;
-    scrollToPage(currentPage);
+    jumpToPage(currentPage);
+}
+
+function jumpToPage(pageNum) {
+    currentPage = pageNum;
+    pageIndicator.textContent = `${currentPage} / ${totalPages}`;
+    saveBookLastPage(currentBook ? currentBook.id : null, currentPage);
+
+    if (viewMode === 'scroll') {
+        scrollToPage(currentPage);
+    } else if (pageFlipInstance) {
+        try { pageFlipInstance.turnToPage(currentPage - 1); } catch(e) {}
+    }
 }
 
 function scrollToPage(pageNum) {
     const wrapper = document.getElementById(`page-wrapper-${pageNum}`);
     if (wrapper) {
         wrapper.scrollIntoView({ behavior: 'smooth', inline: 'start' });
-        pageIndicator.textContent = `${pageNum} / ${totalPages}`;
     }
 }
 
-// === Close Book (Home button) ===
+// === Close Book ===
 function closeBook() {
     try { stopReading(); } catch(e) {}
     try { pdfScrollContainer.removeEventListener('scroll', onScroll); } catch(e) {}
     try { if (pdfDoc) { pdfDoc.destroy(); pdfDoc = null; } } catch(e) {}
-    try { pdfPagesWrapper.innerHTML = ''; } catch(e) {}
-    currentPage = 1;
-    totalPages = 0;
+    if (pageFlipInstance) {
+        try { pageFlipInstance.destroy(); } catch(e) {}
+        pageFlipInstance = null;
+    }
+    pdfPagesWrapper.innerHTML = '';
+    pageflipWrapper.innerHTML = '';
+
     screenReader.classList.add('hidden');
     screenLibrary.classList.remove('hidden');
+    renderLibrary();
+}
+
+// === Zoom Controls ===
+function zoomIn() {
+    if (zoomLevel < 2.5) {
+        zoomLevel += 0.25;
+        updateZoomDisplay();
+        reRenderPagesForZoom();
+    }
+}
+
+function zoomOut() {
+    if (zoomLevel > 0.75) {
+        zoomLevel -= 0.25;
+        updateZoomDisplay();
+        reRenderPagesForZoom();
+    }
+}
+
+function resetZoom() {
+    zoomLevel = 1.0;
+    updateZoomDisplay();
+    reRenderPagesForZoom();
+}
+
+function updateZoomDisplay() {
+    zoomLevelText.textContent = `${Math.round(zoomLevel * 100)}%`;
+}
+
+function reRenderPagesForZoom() {
+    if (viewMode === 'scroll') {
+        pdfPagesWrapper.innerHTML = '';
+        initScrollView();
+    } else {
+        for (let i = 1; i <= totalPages; i++) {
+            renderFlipPageCanvas(i);
+        }
+    }
+}
+
+// === Reader Filter Themes ===
+function cycleReaderFilter() {
+    const filters = ['normal', 'sepia', 'dark'];
+    const labels = { normal: 'ធម្មតា', sepia: 'សេពពា', dark: 'ងងឹត' };
+
+    const idx = filters.indexOf(readerThemeFilter);
+    readerThemeFilter = filters[(idx + 1) % filters.length];
+
+    document.body.classList.remove('reader-filter-normal', 'reader-filter-sepia', 'reader-filter-dark');
+    document.body.classList.add(`reader-filter-${readerThemeFilter}`);
+    readerFilterLabel.textContent = labels[readerThemeFilter];
+    showToast(`ពណ៌ទំព័រ៖ ${labels[readerThemeFilter]}`);
+}
+
+// === Page Jump Modal ===
+function openPageJumpModal() {
+    if (!pdfDoc) return;
+    document.getElementById('jump-max-page').textContent = totalPages;
+    const jumpInput = document.getElementById('jump-input');
+    const jumpSlider = document.getElementById('jump-slider');
+
+    jumpInput.max = totalPages;
+    jumpInput.value = currentPage;
+    jumpSlider.max = totalPages;
+    jumpSlider.value = currentPage;
+
+    document.getElementById('modal-page-jump').classList.remove('hidden');
+}
+
+function closePageJumpModal(e) {
+    document.getElementById('modal-page-jump').classList.add('hidden');
+}
+
+function syncJumpInput(val) {
+    document.getElementById('jump-input').value = val;
+}
+
+function executePageJump() {
+    const val = parseInt(document.getElementById('jump-input').value, 10);
+    if (!isNaN(val) && val >= 1 && val <= totalPages) {
+        jumpToPage(val);
+        closePageJumpModal();
+    }
 }
 
 // === Text to Speech ===
@@ -212,33 +641,27 @@ async function toggleRead() {
             return;
         }
 
-        btnTts.textContent = '⏹️ ឈប់';
+        btnTts.textContent = '⏹️ ឈប់អាន';
 
-        // Try Web Speech API first
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
 
-            // Find a Khmer voice if available, otherwise use default
             const voices = window.speechSynthesis.getVoices();
             const khmerVoice = voices.find(v => v.lang.startsWith('km') || v.lang.startsWith('kh'));
             if (khmerVoice) utterance.voice = khmerVoice;
             
             utterance.lang = 'km-KH';
             utterance.rate = 0.85;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
 
             utterance.onend = () => stopReading();
             utterance.onerror = (e) => {
                 console.error('Speech error:', e);
-                // Fallback to Google TTS audio
                 playGoogleTTS(text);
             };
 
             window.speechSynthesis.speak(utterance);
 
-            // Android bug: speechSynthesis sometimes stops silently — detect and restart
             setTimeout(() => {
                 if (isReading && !window.speechSynthesis.speaking) {
                     playGoogleTTS(text);
@@ -246,7 +669,6 @@ async function toggleRead() {
             }, 2000);
 
         } else {
-            // Fallback: Google TTS
             playGoogleTTS(text);
         }
 
@@ -280,10 +702,26 @@ function playGoogleTTS(text) {
 
 function stopReading() {
     isReading = false;
-    window.speechSynthesis.cancel();
-    btnTts.textContent = '🔊 អាន';
+    try { window.speechSynthesis.cancel(); } catch(e) {}
+    btnTts.textContent = '🔊 អានអត្ថបទ';
     btnTts.classList.remove('reading');
+}
+
+// === Toast System ===
+function showToast(message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 2500);
 }
 
 // === Init ===
 document.addEventListener('DOMContentLoaded', loadLibrary);
+
