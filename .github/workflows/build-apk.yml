@@ -34,13 +34,14 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Prepare Capacitor Assets & Keystore
+      - name: Install Node Dependencies & Sync Capacitor
         run: |
+          npm install
           mkdir -p android/app/src/main/assets/public
           cp -r src/* android/app/src/main/assets/public/
+          npx cap sync android || true
           mkdir -p android/capacitor-cordova-android-plugins
           echo "ext {}" > android/capacitor-cordova-android-plugins/cordova.variables.gradle
-          echo "dependencies {}" > android/capacitor-cordova-android-plugins/build.gradle
           
           if [ ! -f "android/release-key.jks" ]; then
             keytool -genkeypair -v -keystore android/release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias cambodia-law-key -storepass CambodiaLaw2026! -keypass CambodiaLaw2026! -dname "CN=Cambodia Law Library, OU=Legal Tech, O=Cambodia Law Library, L=Phnom Penh, ST=Phnom Penh, C=KH"
