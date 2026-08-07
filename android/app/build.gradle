@@ -18,17 +18,10 @@ android {
     }
     signingConfigs {
         release {
-            if (file('../release-key.jks').exists()) {
-                storeFile file('../release-key.jks')
-                storePassword "CambodiaLaw2026!"
-                keyAlias "cambodia-law-key"
-                keyPassword "CambodiaLaw2026!"
-            } else if (file("../../release.keystore").exists()) {
-                storeFile file("../../release.keystore")
-                storePassword "Rithylove71#"
-                keyAlias "bongbeegta"
-                keyPassword "Rithylove71#"
-            }
+            storeFile file('../release-key.jks')
+            storePassword "CambodiaLaw2026!"
+            keyAlias "cambodia-law-key"
+            keyPassword "CambodiaLaw2026!"
         }
     }
     buildTypes {

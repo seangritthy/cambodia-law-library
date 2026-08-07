@@ -73,6 +73,7 @@ jobs:
         with:
           tag_name: v1.1.0
           name: Cambodia Law Library v1.1.0 Release APK
+          allowUpdates: true
           body: |
             ### 📱 Cambodia Law Library (បណ្ណាល័យច្បាប់កម្ពុជា) v1.1.0 Android Release
             
