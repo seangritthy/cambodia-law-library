@@ -1035,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.4.3';
+const CURRENT_VERSION = '1.5.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1524,6 +1524,30 @@ function toggleSearchResultsList() {
     const resultsList = document.getElementById('doc-search-results-list');
     if (resultsList) {
         resultsList.classList.toggle('hidden');
+    }
+}
+
+// === NATIVE ANDROID PDF VIEWER INTEGRATION ===
+function openCurrentBookInNativeViewer() {
+    if (!currentBook) return;
+    const filename = currentBook.filename;
+    if (!filename) {
+        showToast('សៀវភៅនេះមិនទាន់មានឯកសារក្នុងម៉ាស៊ីនទេ');
+        return;
+    }
+
+    const NativePdfViewer = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.NativePdfViewer;
+
+    if (NativePdfViewer) {
+        showToast('កំពុងបើកកម្មវិធីមើល PDF Native... 📱');
+        NativePdfViewer.openPdf({ filename }).catch(err => {
+            console.error('Native PDF viewer error:', err);
+            showToast('មិនអាចបើកកម្មវិធីមើល PDF Native បានទេ');
+        });
+    } else {
+        const url = 'pdfs/' + filename;
+        window.open(url, '_blank');
+        showToast('កំពុងបើកឯកសារ PDF ក្នុងផ្ទាំងថ្មី 🌐');
     }
 }
 
