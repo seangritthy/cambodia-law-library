@@ -467,12 +467,39 @@ async function openBook(book) {
 }
 
 // === Robust PDF Binary & Document Loader ===
+// === Automatic Offline PDF Storage Cache ===
+const PDF_CACHE_KEY = 'cambodia_law_pdf_cache_v1';
+
 async function loadArrayBufferData(url) {
     if (!url) return null;
+
+    // 1. Check local phone Cache API first for instant offline access next time
+    if ('caches' in window) {
+        try {
+            const cache = await caches.open(PDF_CACHE_KEY);
+            const cachedResponse = await cache.match(url);
+            if (cachedResponse && cachedResponse.ok) {
+                const buf = await cachedResponse.arrayBuffer();
+                if (buf && buf.byteLength > 1000) {
+                    return buf;
+                }
+            }
+        } catch (e) {}
+    }
+
+    // 2. Fetch over network & save copy to phone storage for offline use next time
     try {
         const response = await fetch(url);
         if (response.ok) {
-            return await response.arrayBuffer();
+            const clone = response.clone();
+            const buffer = await response.arrayBuffer();
+            if ('caches' in window && buffer && buffer.byteLength > 1000) {
+                try {
+                    const cache = await caches.open(PDF_CACHE_KEY);
+                    await cache.put(url, clone);
+                } catch (e) {}
+            }
+            return buffer;
         }
     } catch (e) {
         console.warn('Fetch ArrayBuffer failed for:', url, e);
@@ -1131,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.2.1';
+const CURRENT_VERSION = '3.3.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
