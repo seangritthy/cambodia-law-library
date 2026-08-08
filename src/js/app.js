@@ -387,42 +387,29 @@ async function openBook(book) {
     pdfScrollContainer.classList.add('hidden');
     pdfFlipContainer.classList.add('hidden');
     
-    if (btnTts) {
-        btnTts.textContent = '🔊 អានអត្ថបទ';
-        btnTts.classList.remove('reading');
-    }
-    updateReaderFavButton();
-    updateZoomDisplay();
-
-    const localUrl = book.filename ? 'pdfs/' + book.filename : null;
-    const remoteUrl = book.url ? book.url : null;
-    const primaryUrl = localUrl || remoteUrl;
-    const fallbackUrl = remoteUrl || localUrl;
-
-    const knownSizeBytes = (currentBook && currentBook.sizeBytes && currentBook.sizeBytes > 0) ? currentBook.sizeBytes : 0;
-
     function onDownloadProgress(pct, rMB, tMB) {
         let displayPct = pct;
-        let totalMBStr = tMB;
+        let textSummary = '';
 
-        if (pct < 0 || tMB === '?' || !tMB) {
-            const rVal = parseFloat(rMB) || 0;
-            const tBytes = knownSizeBytes > 0 ? knownSizeBytes : 0;
-            if (tBytes > 0) {
-                const totalMB = (tBytes / (1024 * 1024)).toFixed(1);
-                displayPct = Math.min(100, Math.round(((rVal * 1024 * 1024) / tBytes) * 100));
-                totalMBStr = `${totalMB}MB`;
-            } else {
-                displayPct = Math.min(95, Math.max(10, Math.round((rVal / 5.0) * 100)));
-                totalMBStr = '~5MB';
-            }
+        const knownSizeBytes = (currentBook && currentBook.sizeBytes && currentBook.sizeBytes > 0) ? currentBook.sizeBytes : 0;
+        const rVal = parseFloat(rMB) || 0;
+
+        if (pct >= 0 && tMB && tMB !== '?') {
+            displayPct = Math.max(5, Math.min(100, pct));
+            textSummary = `ទាញយក៖ ${displayPct}% (${rMB} MB / ${tMB} MB)`;
+        } else if (knownSizeBytes > 0) {
+            const totalMB = (knownSizeBytes / (1024 * 1024)).toFixed(1);
+            displayPct = Math.min(100, Math.round(((rVal * 1024 * 1024) / knownSizeBytes) * 100));
+            displayPct = Math.max(5, displayPct);
+            textSummary = `ទាញយក៖ ${displayPct}% (${rMB} MB / ${totalMB} MB)`;
         } else {
-            totalMBStr = `${tMB}MB`;
+            const dynamicEstPct = Math.min(96, Math.max(8, Math.round(100 * (1 - Math.exp(-rVal / 2.2)))));
+            displayPct = dynamicEstPct;
+            textSummary = `ទាញយក៖ ${rMB} MB (កំពុងទាញយក...)`;
         }
 
-        displayPct = Math.max(5, Math.min(100, displayPct));
         if (progressBar) progressBar.style.width = `${displayPct}%`;
-        if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${displayPct}% (${rMB}MB / ${totalMBStr})`;
+        if (progressPercent) progressPercent.textContent = textSummary;
         if (loadingStatusText) loadingStatusText.textContent = `កំពុងទាញយកឯកសារ... ${displayPct}%`;
     }
 
@@ -527,6 +514,11 @@ async function loadArrayBufferData(url, onProgress) {
                 }
                 const buffer = allChunks.buffer;
 
+                if (onProgress && buffer) {
+                    const finalMB = (buffer.byteLength / (1024 * 1024)).toFixed(1);
+                    onProgress(100, finalMB, finalMB);
+                }
+
                 if ('caches' in window && buffer && buffer.byteLength > 1000) {
                     try {
                         const cache = await caches.open(PDF_CACHE_KEY);
@@ -538,6 +530,10 @@ async function loadArrayBufferData(url, onProgress) {
             } else {
                 const clone = response.clone();
                 const buffer = await response.arrayBuffer();
+                if (onProgress && buffer) {
+                    const finalMB = (buffer.byteLength / (1024 * 1024)).toFixed(1);
+                    onProgress(100, finalMB, finalMB);
+                }
                 if ('caches' in window && buffer && buffer.byteLength > 1000) {
                     try {
                         const cache = await caches.open(PDF_CACHE_KEY);
@@ -573,6 +569,10 @@ async function loadArrayBufferData(url, onProgress) {
         xhr.onload = function() {
             if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 0) {
                 if (xhr.response && xhr.response.byteLength > 0) {
+                    if (onProgress) {
+                        const finalMB = (xhr.response.byteLength / (1024 * 1024)).toFixed(1);
+                        onProgress(100, finalMB, finalMB);
+                    }
                     resolve(xhr.response);
                 } else {
                     reject(new Error(`XHR response empty for ${url}`));
@@ -1235,7 +1235,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.4.3';
+const CURRENT_VERSION = '3.4.4';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
