@@ -243,7 +243,7 @@ function renderLibrary() {
     }
     libraryEmpty.classList.add('hidden');
 
-    const catLabels = { code: 'ក្រម', royal: 'ព្រះរាជក្រឹត្យ', sub: 'អនុក្រឹត្យ', law: 'ច្បាប់' };
+    const catLabels = { code: 'ក្រម', royal: 'ព្រះរាជក្រឹត្យ', sub: 'អនុក្រឹត្យ', law: 'ច្បាប់', moj: 'MOJ Library' };
 
     filteredBooks.forEach(book => {
         const isFav = favoriteBookIds.has(book.id);
@@ -1071,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.9.0';
+const CURRENT_VERSION = '3.0.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
