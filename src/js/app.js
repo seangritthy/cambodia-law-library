@@ -1057,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.3.1';
+const CURRENT_VERSION = '2.4.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1528,6 +1528,73 @@ function prevSearchMatch() {
     jumpToSearchMatch(currentMatchIndex);
 }
 
+async function saveOrShareFile(blob, filename, mimeType) {
+    const file = new File([blob], filename, { type: mimeType });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({
+                files: [file],
+                title: filename,
+                text: `រក្សាទុកឯកសារ ${filename}`
+            });
+            showToast(`បានជ្រើសរើសទីតាំងរក្សាទុក ${filename} 📲`);
+            return;
+        } catch(err) {
+            if (err.name !== 'AbortError') {
+                console.warn('Web share failed, fallback to direct download:', err);
+            } else {
+                return;
+            }
+        }
+    }
+
+    if (window.showSaveFilePicker) {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: filename,
+                types: [{
+                    description: mimeType === 'image/png' ? 'PNG Image' : 'Text Document',
+                    accept: { [mimeType]: [mimeType === 'image/png' ? '.png' : '.txt'] }
+                }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            showToast(`បានរក្សាទុក ${filename} រួចរាល់! 💾`);
+            return;
+        } catch(err) {
+            if (err.name !== 'AbortError') {
+                console.warn('SaveFilePicker error:', err);
+            } else {
+                return;
+            }
+        }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(`បានទាញយក ${filename} ទៅកាន់ Folder "Download" 💾`);
+}
+
+async function downloadPdfPageImage() {
+    if (!currentExportImageCanvas) return;
+    const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
+    const filename = `${bookTitle}_Page_${currentPage}.png`;
+
+    currentExportImageCanvas.toBlob(async (blob) => {
+        if (!blob) return;
+        await saveOrShareFile(blob, filename, 'image/png');
+    }, 'image/png');
+}
+
 function nextSearchMatch() {
     if (searchMatches.length === 0) return;
     currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
@@ -1751,22 +1818,13 @@ function copyExtractedText() {
     });
 }
 
-function downloadExtractedTextFile() {
+async function downloadExtractedTextFile() {
     if (!currentExtractedText) return;
     const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
     const filename = `${bookTitle}_Page_${currentPage}.txt`;
 
     const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    showToast(`បានទាញយក ${filename} ទៅកាន់ Folder "Download" 💾`);
+    await saveOrShareFile(blob, filename, 'text/plain');
 }
 
 function closePdfTextModal(e) {
