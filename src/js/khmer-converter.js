@@ -537,6 +537,43 @@ var KhmerConverter = (() => {
         if (Array.isArray(replacement)) return [unichr(...replacement), replacer];
         return [unichr(replacement), replacer];
       });
+      var LIMON_TO_UNI_MAP = LIMON_REPLACERS.map(([replacement, replacer]) => {
+        return [replacement, replacer];
+      });
+      LIMON_TO_UNI_MAP.push(["<ú", "ពុ"]);
+      LIMON_TO_UNI_MAP.push(["<", "ព"]);
+      LIMON_TO_UNI_MAP.push(["μ", "្ម"]);
+      LIMON_TO_UNI_MAP.push(["ø", "្ល"]);
+      LIMON_TO_UNI_MAP.push(["Pø", "ផ្ល"]);
+      LIMON_TO_UNI_MAP.push(["BaØ", "បញ្ញ"]);
+      LIMON_TO_UNI_MAP.push(["Ba៪", "បញ្ញ"]);
+      LIMON_TO_UNI_MAP.push(["bBaØ", "ប្បញ្ញ"]);
+      LIMON_TO_UNI_MAP.sort((a, b) => b[0].length - a[0].length);
+
+      function limonToUnicode(text) {
+        if (!text) return '';
+        let result = text;
+        result = result.replace(/eR([a-zA-Z\u0080-\u00ff])/g, '$1Re');
+        result = result.replace(/ER([a-zA-Z\u0080-\u00ff])/g, '$1RE');
+        result = result.replace(/R([a-zA-Z\u0080-\u00ff])/g, '$1R');
+        result = result.replace(/e([a-zA-Z\u0080-\u00ff])/g, '$1e');
+        result = result.replace(/E([a-zA-Z\u0080-\u00ff])/g, '$1E');
+
+        for (let [asciiStr, uniStr] of LIMON_TO_UNI_MAP) {
+          if (asciiStr && asciiStr !== ' ') {
+            result = result.replaceAll(asciiStr, uniStr);
+          }
+        }
+
+        result = result.replace(/\u17c1\u17b8/g, '\u17be');
+        result = result.replace(/\u17c1\u17b6/g, '\u17c4');
+        result = result.replace(/\u17c1\u17c3/g, '\u17c3');
+        result = result.replace(/\u17c1\u17be/g, '\u17be');
+        result = result.replace(/\u17c1\u17c4/g, '\u17c4');
+        result = result.replace(/\u17d2\u17d2/g, '\u17d2');
+        return result;
+      }
+
       function limon(text) {
         text = reorder(text);
         text = text.replace(/[\u1780-\u17ff]\u17ca\u17b7/gm, "ui");
@@ -560,7 +597,11 @@ var KhmerConverter = (() => {
         return text.replace(/\u17ea/g, "");
       }
       exports.limon = limon;
+      exports.limonToUnicode = limonToUnicode;
     }
   });
   return require_index();
 })();
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = KhmerConverter;
+}

@@ -18,7 +18,7 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.7.2</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.8.0</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -30,6 +30,9 @@
                     </button>
                     <button id="btn-theme-toggle" class="icon-btn" title="ប្តូរប្រធានបទ" onclick="toggleTheme()">
                         <span id="theme-icon">🌙</span>
+                    </button>
+                    <button id="btn-limon-converter" class="icon-btn" title="ឧបករណ៍បម្លែងពុម្ពអក្សរ (Limon ↔ Unicode)" onclick="openLimonConverterModal()">
+                        <span>🔤</span>
                     </button>
                 </div>
             </div>
@@ -362,9 +365,46 @@
             </div>
             <div class="modal-footer" style="justify-content:space-between;gap:8px;flex-wrap:wrap;">
                 <button class="btn-secondary" onclick="closePdfTextModal()">បិទ</button>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn-secondary" onclick="convertExtractedLimonToUnicode()">🔤 បម្លែង Limon → Unicode</button>
                     <button class="btn-secondary" onclick="copyExtractedText()">📋 ចម្លងអត្ថបទ</button>
                     <button class="btn-primary" onclick="downloadExtractedTextFile()">💾 ទាញយក .txt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Limon Font to Khmer Unicode Converter -->
+    <div id="modal-limon-converter" class="modal-overlay hidden" onclick="closeLimonConverterModal(event)">
+        <div class="modal-card modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>🔤 ឧបករណ៍បម្លែងពុម្ពអក្សរ (Limon ↔ Khmer Unicode)</h3>
+                <button class="modal-close-btn" onclick="closeLimonConverterModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex;gap:12px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+                    <label for="limon-direction-select" style="font-weight:600;font-size:14px;color:var(--text-primary);">ទិសដៅបម្លែង ៖</label>
+                    <select id="limon-direction-select" onchange="convertLimonInputText()" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:14px;">
+                        <option value="limonToUni">Limon S1 (Legacy ASCII) ➔ Khmer Unicode</option>
+                        <option value="uniToLimon">Khmer Unicode ➔ Limon S1 (Legacy ASCII)</option>
+                    </select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div>
+                        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">អត្ថបទដើម ៖</label>
+                        <textarea id="limon-input-text" placeholder="បិទភ្ជាប់ ឬវាយអត្ថបទនៅទីនេះ..." oninput="convertLimonInputText()" style="width:100%;height:220px;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-size:14px;line-height:1.6;resize:vertical;"></textarea>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">អត្ថបទបម្លែងរួច ៖</label>
+                        <textarea id="limon-output-text" readonly placeholder="លទ្ធផលបម្លែងនឹងបង្ហាញនៅទីនេះ..." style="width:100%;height:220px;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:14px;line-height:1.6;resize:vertical;"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content:space-between;">
+                <button class="btn-secondary" onclick="clearLimonConverter()">🧹 លុបអត្ថបទ</button>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-secondary" onclick="closeLimonConverterModal()">បិទ</button>
+                    <button class="btn-primary" onclick="copyLimonOutputText()">📋 ចម្លងលទ្ធផល</button>
                 </div>
             </div>
         </div>
@@ -375,6 +415,7 @@
 
     <script src="js/pdf.min.js"></script>
     <script src="js/page-flip.browser.js"></script>
+    <script src="js/khmer-converter.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

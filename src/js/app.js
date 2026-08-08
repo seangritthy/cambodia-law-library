@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.7.2';
+const CURRENT_VERSION = '1.8.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1687,6 +1687,84 @@ function downloadExtractedTextFile() {
 function closePdfTextModal(e) {
     if (e && e.target !== e.currentTarget) return;
     document.getElementById('modal-pdf-to-text').classList.add('hidden');
+}
+
+// === LIMON FONT <-> KHMER UNICODE CONVERTER MODAL & TOOLS ===
+function openLimonConverterModal() {
+    const modal = document.getElementById('modal-limon-converter');
+    if (modal) modal.classList.remove('hidden');
+    convertLimonInputText();
+}
+
+function closeLimonConverterModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    const modal = document.getElementById('modal-limon-converter');
+    if (modal) modal.classList.add('hidden');
+}
+
+function convertLimonInputText() {
+    const inputArea = document.getElementById('limon-input-text');
+    const outputArea = document.getElementById('limon-output-text');
+    const directionSelect = document.getElementById('limon-direction-select');
+    if (!inputArea || !outputArea) return;
+
+    const text = inputArea.value || '';
+    const dir = directionSelect ? directionSelect.value : 'limonToUni';
+
+    if (!text.trim()) {
+        outputArea.value = '';
+        return;
+    }
+
+    if (typeof KhmerConverter !== 'undefined') {
+        if (dir === 'limonToUni' && typeof KhmerConverter.limonToUnicode === 'function') {
+            outputArea.value = KhmerConverter.limonToUnicode(text);
+        } else if (dir === 'uniToLimon' && typeof KhmerConverter.limon === 'function') {
+            outputArea.value = KhmerConverter.limon(text);
+        } else {
+            outputArea.value = text;
+        }
+    } else {
+        outputArea.value = text;
+    }
+}
+
+function copyLimonOutputText() {
+    const outputArea = document.getElementById('limon-output-text');
+    if (!outputArea || !outputArea.value) {
+        showToast('គ្មានអត្ថបទសម្រាប់ចម្លងទេ');
+        return;
+    }
+    navigator.clipboard.writeText(outputArea.value).then(() => {
+        showToast('បានចម្លងលទ្ធផលចូល Clipboard រួចរាល់! 📋');
+    }).catch(() => {
+        outputArea.select();
+        document.execCommand('copy');
+        showToast('បានចម្លងលទ្ធផលចូល Clipboard! 📋');
+    });
+}
+
+function clearLimonConverter() {
+    const inputArea = document.getElementById('limon-input-text');
+    const outputArea = document.getElementById('limon-output-text');
+    if (inputArea) inputArea.value = '';
+    if (outputArea) outputArea.value = '';
+}
+
+function convertExtractedLimonToUnicode() {
+    const txtArea = document.getElementById('pdf-text-extracted-area');
+    if (!txtArea || !txtArea.value) {
+        showToast('គ្មានអត្ថបទសម្រាប់បម្លែងទេ');
+        return;
+    }
+    if (typeof KhmerConverter !== 'undefined' && typeof KhmerConverter.limonToUnicode === 'function') {
+        const converted = KhmerConverter.limonToUnicode(txtArea.value);
+        txtArea.value = converted;
+        currentExtractedText = converted;
+        showToast('បានបម្លែងពុម្ពអក្សរ Limon ទៅជា Khmer Unicode រួចរាល់! 🔤');
+    } else {
+        showToast('ពុំអាចបម្លែងពុម្ពអក្សរបានទេ');
+    }
 }
 
 
