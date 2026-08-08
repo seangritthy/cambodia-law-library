@@ -1057,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.4.1';
+const CURRENT_VERSION = '2.4.2';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1528,26 +1528,77 @@ function prevSearchMatch() {
     jumpToSearchMatch(currentMatchIndex);
 }
 
-function downloadPdfPageImage() {
+async function triggerSaveToPicker(blob, filename, mimeType) {
+    const file = new File([blob], filename, { type: mimeType });
+
+    if (window.showSaveFilePicker) {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: filename,
+                types: [{
+                    description: mimeType === 'image/png' ? 'PNG Image' : 'Text Document',
+                    accept: { [mimeType]: [mimeType === 'image/png' ? '.png' : '.txt'] }
+                }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            showToast(`បានរក្សាទុក ${filename} ទៅកាន់ទីតាំងដែលបានជ្រើសរើស! 💾`);
+            return;
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+            console.warn('showSaveFilePicker error:', err);
+        }
+    }
+
+    if (navigator.share) {
+        try {
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: filename,
+                    text: `រក្សាទុក ${filename}`
+                });
+                showToast(`បានជ្រើសរើសទីតាំងរក្សាទុក ${filename} 📲`);
+                return;
+            } else if (mimeType === 'text/plain') {
+                const text = await blob.text();
+                await navigator.share({
+                    title: filename,
+                    text: text
+                });
+                showToast(`បានបើកផ្ទាំងជ្រើសរើសទីតាំង ${filename} 📲`);
+                return;
+            }
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+            console.warn('navigator.share error:', err);
+        }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 1000);
+    showToast(`បានទាញយក ${filename} 💾`);
+}
+
+async function downloadPdfPageImage() {
     if (!currentExportImageCanvas) return;
     const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
     const filename = `${bookTitle}_Page_${currentPage}.png`;
 
-    try {
-        const dataUrl = currentExportImageCanvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = filename;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => document.body.removeChild(a), 500);
-
-        showToast(`បានទាញយករូបភាព ${filename} 💾`);
-    } catch(err) {
-        console.error('Image download error:', err);
-        showToast('មិនអាចទាញយករូបភាពបានទេ');
-    }
+    currentExportImageCanvas.toBlob(async (blob) => {
+        if (!blob) return;
+        await triggerSaveToPicker(blob, filename, 'image/png');
+    }, 'image/png');
 }
 
 async function sharePdfPageImage() {
@@ -1796,30 +1847,13 @@ function copyExtractedText() {
     });
 }
 
-function downloadExtractedTextFile() {
+async function downloadExtractedTextFile() {
     if (!currentExtractedText) return;
     const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
     const filename = `${bookTitle}_Page_${currentPage}.txt`;
 
-    try {
-        const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }, 500);
-
-        showToast(`បានទាញយក ${filename} 💾`);
-    } catch(err) {
-        console.error('Text download error:', err);
-        showToast('មិនអាចទាញយកអត្ថបទបានទេ');
-    }
+    const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
+    await triggerSaveToPicker(blob, filename, 'text/plain');
 }
 
 async function shareExtractedText() {
