@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.2.0';
+const CURRENT_VERSION = '2.2.1';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1675,13 +1675,13 @@ async function runKhmerOcrOnCurrentPage() {
     if (btn) btn.disabled = true;
 
     try {
-        showToast(`កំពុងស្កេនរូបភាពទំព័រទី ${currentPage} ជាមួយ Khmer OCR... 🔍`);
+        showToast(`កំពុងស្កេនរូបភាពទំព័រទី ${currentPage}/${totalPages} ជាមួយ Khmer OCR... 🔍`);
         const page = await pdfDoc.getPage(currentPage);
         const ocrText = await ocrKhmerPdfPage(page, currentPage);
 
         if (txtArea) txtArea.value = ocrText || 'មិនអាចស្កេនអត្ថបទខ្មែរចេញពីរូបភាពទំព័រនេះបានទេ';
         currentExtractedText = ocrText;
-        showToast(`បានស្កេនអត្ថបទខ្មែរទំព័រទី ${currentPage} (OCR) រួចរាល់! 🔍`);
+        showToast(`បានស្កេនអត្ថបទខ្មែរទំព័រទី ${currentPage}/${totalPages} (OCR) រួចរាល់! 🔍`);
     } catch(err) {
         console.error('Manual OCR error:', err);
         showToast('មិនអាចដំណើរការ Khmer OCR បានទេ');
@@ -1693,7 +1693,7 @@ async function runKhmerOcrOnCurrentPage() {
 async function exportPdfPageToText() {
     if (!pdfDoc) return;
     try {
-        showToast(`កំពុងស្រង់អត្ថបទពីទំព័រទី ${currentPage}... 📄`);
+        showToast(`កំពុងស្រង់អត្ថបទពីទំព័រទី ${currentPage}/${totalPages}... 📄`);
         const page = await pdfDoc.getPage(currentPage);
         const textContent = await page.getTextContent();
 
@@ -1703,7 +1703,7 @@ async function exportPdfPageToText() {
         const pageLabel = document.getElementById('txt-export-page-num');
 
         if (txtArea) txtArea.value = currentExtractedText;
-        if (pageLabel) pageLabel.textContent = currentPage;
+        if (pageLabel) pageLabel.textContent = `${currentPage} / ${totalPages}`;
 
         document.getElementById('modal-pdf-to-text').classList.remove('hidden');
     } catch(err) {
