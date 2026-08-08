@@ -1057,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.4.2';
+const CURRENT_VERSION = '2.5.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1694,6 +1694,14 @@ async function exportPdfPageToImage() {
         if (imgPreview) imgPreview.src = dataUrl;
         if (pageLabel) pageLabel.textContent = currentPage;
 
+        const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
+        const filename = `${bookTitle}_Page_${currentPage}.png`;
+        const btnDlImg = document.getElementById('btn-dl-img-file');
+        if (btnDlImg) {
+            btnDlImg.href = dataUrl;
+            btnDlImg.download = filename;
+        }
+
         document.getElementById('modal-pdf-to-image').classList.remove('hidden');
     } catch(err) {
         console.error('PDF to Image error:', err);
@@ -1803,6 +1811,16 @@ async function runKhmerOcrOnCurrentPage() {
 
         if (txtArea) txtArea.value = ocrText || 'មិនអាចស្កេនអត្ថបទខ្មែរចេញពីរូបភាពទំព័រនេះបានទេ';
         currentExtractedText = ocrText;
+
+        const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
+        const filename = `${bookTitle}_Page_${currentPage}.txt`;
+        const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
+        const btnDlTxt = document.getElementById('btn-dl-txt-file');
+        if (btnDlTxt) {
+            btnDlTxt.href = URL.createObjectURL(blob);
+            btnDlTxt.download = filename;
+        }
+
         showToast(`បានស្កេនអត្ថបទខ្មែរទំព័រទី ${currentPage}/${totalPages} (OCR) រួចរាល់! 🔍`);
     } catch(err) {
         console.error('Manual OCR error:', err);
@@ -1826,6 +1844,15 @@ async function exportPdfPageToText() {
         if (txtArea) txtArea.value = currentExtractedText;
         if (pageLabel) pageLabel.textContent = `${currentPage} / ${totalPages}`;
 
+        const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
+        const filename = `${bookTitle}_Page_${currentPage}.txt`;
+        const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
+        const btnDlTxt = document.getElementById('btn-dl-txt-file');
+        if (btnDlTxt) {
+            btnDlTxt.href = URL.createObjectURL(blob);
+            btnDlTxt.download = filename;
+        }
+
         document.getElementById('modal-pdf-to-text').classList.remove('hidden');
     } catch(err) {
         console.error('PDF to Text error:', err);
@@ -1847,13 +1874,12 @@ function copyExtractedText() {
     });
 }
 
-async function downloadExtractedTextFile() {
-    if (!currentExtractedText) return;
-    const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
-    const filename = `${bookTitle}_Page_${currentPage}.txt`;
+function onImageDownloadClicked(e) {
+    showToast(`កំពុងទាញយករូបភាពទំព័រទី ${currentPage}... 💾`);
+}
 
-    const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
-    await triggerSaveToPicker(blob, filename, 'text/plain');
+function onTextDownloadClicked(e) {
+    showToast(`កំពុងទាញយកឯកសារអត្ថបទ (.txt)... 💾`);
 }
 
 async function shareExtractedText() {
