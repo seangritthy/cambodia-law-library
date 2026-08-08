@@ -18,7 +18,7 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v3.3.2</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v3.3.4</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -199,6 +199,10 @@
         <div id="reader-loading" class="reader-loading">
             <div class="spinner"></div>
             <p id="loading-status-text">កំពុងផ្ទុកឯកសារ PDF...</p>
+            <div id="download-progress-container" class="download-progress-container hidden" style="width:240px;margin-top:12px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;height:10px;border:1px solid rgba(255,255,255,0.2);">
+                <div id="download-progress-bar" style="width:0%;height:100%;background:linear-gradient(90deg, #d4af37, #f39c12);transition:width 0.15s ease;"></div>
+            </div>
+            <p id="download-progress-percent" style="font-size:13px;color:#d4af37;margin-top:6px;font-weight:600;" class="hidden">0%</p>
         </div>
 
         <!-- Scroll View Container -->

@@ -258,10 +258,7 @@ function renderLibrary() {
             </button>
             <div class="book-spine"></div>
             <div class="book-cover-wrapper">
-                <div class="book-cover-thumb-container" id="cover-thumb-${book.id}">
-                    <div class="book-cover-shimmer"></div>
-                </div>
-                <div class="book-cover-content" id="cover-fallback-${book.id}">
+                <div class="book-cover-content">
                     <div class="book-emblem">⚖️</div>
                     <div class="book-title-gold">${book.title}</div>
                     <div class="book-bottom-stripe">ព្រះរាជាណាចក្រកម្ពុជា</div>
@@ -271,56 +268,7 @@ function renderLibrary() {
         `;
         card.addEventListener('click', () => openBook(book));
         libraryGrid.appendChild(card);
-
-        const thumbContainer = card.querySelector(`#cover-thumb-${book.id}`);
-        const fallbackContainer = card.querySelector(`#cover-fallback-${book.id}`);
-        renderPdfCoverThumbnail(book, thumbContainer, fallbackContainer);
     });
-}
-
-// === PDF Original Cover Page Renderer ===
-const pdfCoverThumbnailCache = new Map();
-
-async function renderPdfCoverThumbnail(book, thumbContainer, fallbackContainer) {
-    if (!thumbContainer) return;
-    if (pdfCoverThumbnailCache.has(book.id)) {
-        const cachedDataUrl = pdfCoverThumbnailCache.get(book.id);
-        if (cachedDataUrl) {
-            thumbContainer.innerHTML = `<img src="${cachedDataUrl}" class="book-cover-img" alt="${book.title}" />`;
-            if (fallbackContainer) fallbackContainer.style.opacity = '0';
-            return;
-        }
-    }
-
-    const localUrl = book.filename ? 'pdfs/' + book.filename : null;
-    const remoteUrl = book.url ? book.url : null;
-    const primaryUrl = localUrl || remoteUrl;
-    const secondaryUrl = remoteUrl || localUrl;
-
-    if (!primaryUrl) return;
-
-    try {
-        const doc = await getPdfDocumentWithFallbacks(primaryUrl, secondaryUrl);
-        const page = await doc.getPage(1);
-        
-        const canvas = document.createElement('canvas');
-        const viewport = page.getViewport({ scale: 0.35 });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        
-        const ctx = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        pdfCoverThumbnailCache.set(book.id, dataUrl);
-
-        thumbContainer.innerHTML = `<img src="${dataUrl}" class="book-cover-img" alt="${book.title}" />`;
-        if (fallbackContainer) fallbackContainer.style.opacity = '0';
-    } catch(e) {
-        // Keep fallback template cover if PDF page 1 cannot be rendered
-        thumbContainer.style.display = 'none';
-        if (fallbackContainer) fallbackContainer.style.opacity = '1';
-    }
 }
 
 // === Search & Category Handlers ===
@@ -412,6 +360,18 @@ async function openBook(book) {
     bookTitleBar.textContent = book.title;
     pageIndicator.textContent = `${currentPage} / --`;
     loadingStatusText.textContent = 'កំពុងផ្ទុកឯកសារ PDF...';
+
+    const progressContainer = document.getElementById('download-progress-container');
+    const progressBar = document.getElementById('download-progress-bar');
+    const progressPercent = document.getElementById('download-progress-percent');
+
+    if (progressContainer) progressContainer.classList.remove('hidden');
+    if (progressPercent) {
+        progressPercent.classList.remove('hidden');
+        progressPercent.textContent = '0%';
+    }
+    if (progressBar) progressBar.style.width = '0%';
+
     readerLoading.classList.remove('hidden');
     
     pdfScrollContainer.classList.add('hidden');
@@ -429,6 +389,17 @@ async function openBook(book) {
     const primaryUrl = localUrl || remoteUrl;
     const fallbackUrl = remoteUrl || localUrl;
 
+    function onDownloadProgress(pct, rMB, tMB) {
+        if (pct >= 0) {
+            if (progressBar) progressBar.style.width = `${pct}%`;
+            if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${pct}% (${rMB}MB / ${tMB}MB)`;
+            if (loadingStatusText) loadingStatusText.textContent = `កំពុងទាញយកឯកសារ... ${pct}%`;
+        } else {
+            if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${rMB}MB`;
+            if (loadingStatusText) loadingStatusText.textContent = `កំពុងទាញយកឯកសារ... ${rMB}MB`;
+        }
+    }
+
     try {
         if (pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
         if (pageFlipInstance) {
@@ -436,13 +407,14 @@ async function openBook(book) {
             pageFlipInstance = null;
         }
 
-        pdfDoc = await getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl);
+        pdfDoc = await getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl, onDownloadProgress);
 
         totalPages = pdfDoc.numPages;
         if (currentPage > totalPages) currentPage = 1;
 
         pageIndicator.textContent = `${currentPage} / ${totalPages}`;
         readerLoading.classList.add('hidden');
+        if (progressContainer) progressContainer.classList.add('hidden');
 
         updateReadingProgressBar();
         updateBookmarkButton();
@@ -470,7 +442,7 @@ async function openBook(book) {
 // === Automatic Offline PDF Storage Cache ===
 const PDF_CACHE_KEY = 'cambodia_law_pdf_cache_v1';
 
-async function loadArrayBufferData(url) {
+async function loadArrayBufferData(url, onProgress) {
     if (!url) return null;
 
     // 1. Check local phone Cache API first for instant offline access next time
@@ -481,25 +453,72 @@ async function loadArrayBufferData(url) {
             if (cachedResponse && cachedResponse.ok) {
                 const buf = await cachedResponse.arrayBuffer();
                 if (buf && buf.byteLength > 1000) {
+                    const mb = (buf.byteLength / (1024 * 1024)).toFixed(1);
+                    if (onProgress) onProgress(100, mb, mb);
                     return buf;
                 }
             }
         } catch (e) {}
     }
 
-    // 2. Fetch over network & save copy to phone storage for offline use next time
+    // 2. Fetch over network & stream percentage progress
     try {
         const response = await fetch(url);
         if (response.ok) {
-            const clone = response.clone();
-            const buffer = await response.arrayBuffer();
-            if ('caches' in window && buffer && buffer.byteLength > 1000) {
-                try {
-                    const cache = await caches.open(PDF_CACHE_KEY);
-                    await cache.put(url, clone);
-                } catch (e) {}
+            const contentLength = response.headers.get('content-length');
+            const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+
+            if (response.body && typeof ReadableStream !== 'undefined') {
+                const reader = response.body.getReader();
+                let receivedBytes = 0;
+                const chunks = [];
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    receivedBytes += value.length;
+
+                    if (onProgress) {
+                        if (totalBytes > 0) {
+                            const pct = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
+                            const rMB = (receivedBytes / (1024 * 1024)).toFixed(1);
+                            const tMB = (totalBytes / (1024 * 1024)).toFixed(1);
+                            onProgress(pct, rMB, tMB);
+                        } else {
+                            const rMB = (receivedBytes / (1024 * 1024)).toFixed(1);
+                            onProgress(-1, rMB, 0);
+                        }
+                    }
+                }
+
+                const allChunks = new Uint8Array(receivedBytes);
+                let position = 0;
+                for (const chunk of chunks) {
+                    allChunks.set(chunk, position);
+                    position += chunk.length;
+                }
+                const buffer = allChunks.buffer;
+
+                if ('caches' in window && buffer && buffer.byteLength > 1000) {
+                    try {
+                        const cache = await caches.open(PDF_CACHE_KEY);
+                        await cache.put(url, new Response(buffer, { headers: response.headers }));
+                    } catch (e) {}
+                }
+                return buffer;
+
+            } else {
+                const clone = response.clone();
+                const buffer = await response.arrayBuffer();
+                if ('caches' in window && buffer && buffer.byteLength > 1000) {
+                    try {
+                        const cache = await caches.open(PDF_CACHE_KEY);
+                        await cache.put(url, clone);
+                    } catch (e) {}
+                }
+                return buffer;
             }
-            return buffer;
         }
     } catch (e) {
         console.warn('Fetch ArrayBuffer failed for:', url, e);
@@ -509,6 +528,21 @@ async function loadArrayBufferData(url) {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
         xhr.responseType = 'arraybuffer';
+
+        xhr.onprogress = function(event) {
+            if (onProgress) {
+                if (event.lengthComputable && event.total > 0) {
+                    const pct = Math.round((event.loaded / event.total) * 100);
+                    const rMB = (event.loaded / (1024 * 1024)).toFixed(1);
+                    const tMB = (event.total / (1024 * 1024)).toFixed(1);
+                    onProgress(pct, rMB, tMB);
+                } else {
+                    const rMB = (event.loaded / (1024 * 1024)).toFixed(1);
+                    onProgress(-1, rMB, 0);
+                }
+            }
+        };
+
         xhr.onload = function() {
             if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 0) {
                 if (xhr.response && xhr.response.byteLength > 0) {
@@ -527,7 +561,7 @@ async function loadArrayBufferData(url) {
     });
 }
 
-async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl) {
+async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl, onProgress) {
     const urlsToTry = [primaryUrl];
     if (fallbackUrl && fallbackUrl !== primaryUrl) {
         urlsToTry.push(fallbackUrl);
@@ -540,7 +574,7 @@ async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl) {
     for (const url of urlsToTry) {
         if (!url) continue;
         try {
-            const buffer = await loadArrayBufferData(url);
+            const buffer = await loadArrayBufferData(url, onProgress);
             if (buffer) {
                 try {
                     return await pdfjsLib.getDocument({
@@ -1168,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.3.2';
+const CURRENT_VERSION = '3.3.4';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
