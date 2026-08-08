@@ -374,6 +374,22 @@ async function openBook(book) {
     const progressContainer = document.getElementById('download-progress-container');
     const progressBar = document.getElementById('download-progress-bar');
     const progressPercent = document.getElementById('download-progress-percent');
+    
+    const candidateUrls = [];
+    if (book.filename) {
+        candidateUrls.push(`pdfs/${book.filename}`);
+        candidateUrls.push(`./pdfs/${book.filename}`);
+        candidateUrls.push(`/pdfs/${book.filename}`);
+        if (window.location && window.location.origin) {
+            candidateUrls.push(`${window.location.origin}/pdfs/${book.filename}`);
+        }
+    }
+    if (book.url) {
+        candidateUrls.push(book.url);
+        if (book.url.startsWith('http:')) {
+            candidateUrls.push(book.url.replace('http:', 'https:'));
+        }
+    }
 
     if (progressContainer) progressContainer.classList.remove('hidden');
     if (progressPercent) {
@@ -420,7 +436,7 @@ async function openBook(book) {
             pageFlipInstance = null;
         }
 
-        pdfDoc = await getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl, onDownloadProgress);
+        pdfDoc = await getPdfDocumentWithFallbacks(candidateUrls, onDownloadProgress);
 
         totalPages = pdfDoc.numPages;
         if (currentPage > totalPages) currentPage = 1;
@@ -615,10 +631,9 @@ async function loadArrayBufferData(url, onProgress) {
     });
 }
 
-async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl, onProgress) {
-    const urlsToTry = [primaryUrl];
-    if (fallbackUrl && fallbackUrl !== primaryUrl) {
-        urlsToTry.push(fallbackUrl);
+async function getPdfDocumentWithFallbacks(urlsToTry, onProgress) {
+    if (!Array.isArray(urlsToTry)) {
+        urlsToTry = [urlsToTry];
     }
 
     const localCMapUrl = 'cmaps/';
@@ -1262,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.4.5';
+const CURRENT_VERSION = '3.4.6';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
