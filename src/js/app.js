@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.6.8';
+const CURRENT_VERSION = '1.6.9';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1682,6 +1682,8 @@ function convertLimonToKhmerUnicode(str, forceLimon = false) {
         'km<úCa': 'កម្ពុជា', 'kñúg': 'ក្នុង', 'lMh': 'លំហ', 'Epñk': 'ផ្នែក',
         'bTelμIs': 'បទល្មើស', 'EdndI': 'ដែនដី', 'RBHraCaNacRk': 'ព្រះរាជាណាចក្រ',
         'eKal': 'គោល', 'cMNg': 'ចំណង', 'P¢ab;': 'ភ្ជាប់', 'TIkEnøg': 'ទីកន្លែង',
+        'Rb': 'ប្រ', 'Rt': 'ត្រ', 'Rc': 'ជ្រ', 'Rk': 'ក្រ', 'Rg': 'គ្រ', 'Rs': 'ស្រ', 'Rh': 'ហ្រ',
+        'ebI': 'បើ', 'eTa': 'ទោ', 'eKa': 'គោ', 'eLI': 'ឡើ', 'enaH': 'នោះ', 'eTaH': 'ទោះ', 'enH': 'នេះ',
         'ƶ្ឋ': 'ថ្ងៃ',
         'ȭ': 'ឆ្ន',
         'ŏ': 'ា',
