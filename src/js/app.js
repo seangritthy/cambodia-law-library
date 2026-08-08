@@ -750,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.2.4';
+const CURRENT_VERSION = '1.2.8';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -769,7 +769,9 @@ async function checkForUpdates(manual = false) {
         if (latestTag && isNewerVersion(latestTag, CURRENT_VERSION)) {
             document.getElementById('update-banner-tag').textContent = 'v' + latestTag;
             document.getElementById('update-banner').classList.remove('hidden');
-            if (manual) openUpdateModal();
+            openUpdateModal();
+            showToast(`មានកំណែថ្មី v${latestTag}! កំពុងទាញយកអាប់ដេត...`);
+            downloadAndInstallUpdate();
         } else {
             if (manual) showToast('កម្មវិធីរបស់អ្នកជាជំនាន់ចុងក្រោយបង្អស់ហើយ!');
         }
