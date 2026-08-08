@@ -1202,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.3.7';
+const CURRENT_VERSION = '3.3.8';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1853,7 +1853,7 @@ function openCurrentBookInNativeViewer() {
         return;
     }
 
-    showToast('កំពុងបើកឯកសារ PDF ក្នុង Native Viewer... 📖');
+    showToast('កំពុងបើកឯកសារ PDF... 📖');
 
     try {
         if (window.Capacitor && window.Capacitor.isNativePlatform()) {
