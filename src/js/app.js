@@ -1202,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.3.4';
+const CURRENT_VERSION = '3.3.5';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1934,7 +1934,7 @@ async function ocrKhmerPdfPage(page, pageNumber) {
         throw new Error('Tesseract OCR engine is not loaded');
     }
 
-    const workerOptions = {
+    const cdnWorkerOptions = {
         workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
         corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
         langPath: 'https://tessdata.projectnaptha.com/4.0.0',
@@ -1946,12 +1946,24 @@ async function ocrKhmerPdfPage(page, pageNumber) {
         }
     };
 
-    let result;
+    let result = null;
+
+    // Multi-layered fallback recognize calls
     try {
-        result = await Tesseract.recognize(canvas, 'khm+eng', workerOptions);
+        result = await Tesseract.recognize(canvas, 'khm+eng', cdnWorkerOptions);
     } catch(e1) {
-        console.warn('Tesseract khm+eng failed, trying fallback recognize...', e1);
-        result = await Tesseract.recognize(canvas, 'khm', workerOptions);
+        console.warn('Tesseract CDN khm+eng failed, trying khm...', e1);
+        try {
+            result = await Tesseract.recognize(canvas, 'khm', cdnWorkerOptions);
+        } catch(e2) {
+            console.warn('Tesseract CDN khm failed, trying default recognize...', e2);
+            try {
+                result = await Tesseract.recognize(canvas, 'khm');
+            } catch(e3) {
+                console.warn('Default khm recognize failed, trying eng...', e3);
+                result = await Tesseract.recognize(canvas, 'eng');
+            }
+        }
     }
 
     const ocrText = (result && result.data && result.data.text) ? result.data.text.trim() : '';
