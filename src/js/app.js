@@ -951,7 +951,8 @@ async function toggleRead() {
 
         const page = await pdfDoc.getPage(currentPage);
         const textContent = await page.getTextContent();
-        const text = textContent.items.map(item => item.str).join(' ').trim();
+        const rawText = textContent.items.map(item => item.str).join(' ').trim();
+        const text = convertPdfTextToUnicode(rawText);
 
         if (!text || text.length < 3) {
             alert('រកមិនឃើញអត្ថបទនៅទំព័រនេះ។\nPDF នេះអាចជាឯកសារស្កែន (រូបភាព)។');
@@ -1058,7 +1059,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.8.1';
+const CURRENT_VERSION = '1.9.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1352,7 +1353,8 @@ async function loadTableOfContents() {
         for (let p = 1; p <= scanPages; p++) {
             const page = await pdfDoc.getPage(p);
             const content = await page.getTextContent();
-            const fullText = content.items.map(item => item.str).join(' ');
+            const rawText = content.items.map(item => item.str).join(' ');
+            const fullText = convertPdfTextToUnicode(rawText);
             let match;
             while ((match = headingRegex.exec(fullText)) !== null) {
                 const title = match[0].trim();
@@ -1462,7 +1464,8 @@ async function executeDocSearch() {
         try {
             const page = await pdfDoc.getPage(p);
             const content = await page.getTextContent();
-            const pageText = content.items.map(i => i.str).join(' ');
+            const rawText = content.items.map(i => i.str).join(' ');
+            const pageText = convertPdfTextToUnicode(rawText);
             
             let idx = pageText.toLowerCase().indexOf(qLower);
             while (idx !== -1) {
@@ -1637,7 +1640,8 @@ async function exportPdfPageToText() {
         const page = await pdfDoc.getPage(currentPage);
         const textContent = await page.getTextContent();
 
-        currentExtractedText = textContent.items.map(item => item.str).join(' ').trim() || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        const rawText = textContent.items.map(item => item.str).join(' ').trim();
+        currentExtractedText = rawText ? convertPdfTextToUnicode(rawText) : 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
 
         const txtArea = document.getElementById('pdf-text-extracted-area');
         const pageLabel = document.getElementById('txt-export-page-num');
@@ -1765,6 +1769,14 @@ function convertExtractedLimonToUnicode() {
     } else {
         showToast('ពុំអាចបម្លែងពុម្ពអក្សរបានទេ');
     }
+}
+
+function convertPdfTextToUnicode(rawText) {
+    if (!rawText) return '';
+    if (typeof KhmerConverter !== 'undefined' && typeof KhmerConverter.limonToUnicode === 'function') {
+        return KhmerConverter.limonToUnicode(rawText);
+    }
+    return rawText;
 }
 
 
