@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.6.7';
+const CURRENT_VERSION = '1.6.8';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1631,8 +1631,57 @@ function closePdfImageModal(e) {
 function convertLimonToKhmerUnicode(str, forceLimon = false) {
     if (!str) return '';
 
-    // ABC & Royal Gazette extended font glyphs matrix
+    // ABC & Royal Gazette & Limon S1 extended font glyphs matrix
     const ABC_MAP = {
+        'RbsinebI': 'ប្រសិនបើ',
+        'karpþnÞaeTas': 'ការផ្តន្ទាទោស',
+        'CasßaBr': 'ជាស្ថាពរ',
+        'RtUv)an': 'ត្រូវបាន',
+        'Rbkas': 'ប្រកាស',
+        'rYcmkehIy': 'រួចមកហើយ',
+        'eTasEdl': 'ទោសដែល',
+        'ecjGMBI': 'ចេញអំពី',
+        'eTasenH': 'ទោសនេះ',
+        'minRtUvGnuvtþeT': 'មិនត្រូវអនុវត្តទេ',
+        'b¤RtUvEtQb;Gnuvtþ': 'ឬត្រូវតែឈប់អនុវត្ត',
+        'maRta 10': 'មាត្រា ១០',
+        'karGnuvtþc,ab;RBhμTNÐEdlRsalCag': 'ការអនុវត្តច្បាប់ព្រហ្មទណ្ឌដែលស្រាលជាង',
+        'b¤F¶n;Cag': 'ឬធ្ងន់ជាង',
+        'bTb,BaØtþifμIEdlEcgGMBIeTasEdlRsalCagRtUvGnuvtþPøam': 'បទប្បញ្ញត្តិថ្មីដែលចែងអំពីទោសដែលស្រាលជាងត្រូវអនុវត្តភ្លាម',
+        'bu:Enþ': 'ប៉ុន្តែ',
+        'rehIyenaH': 'ហើយនោះ',
+        'RtUvGnuvtþ': 'ត្រូវអនុវត្ត',
+        'eTaHbIeTasEdlRbkasenaHF¶n;F¶r': 'ទោះបីទោសដែលប្រកាសនោះធ្ងន់ធ្ងរ',
+        'y:agNak¾eday': 'យ៉ាងណាក៏ដោយ',
+        'nwgRtUvGnuvtþEteTAelIGMeBIEdl': 'នឹងត្រូវអនុវត្តតែទៅលើអំពើដែល',
+        ')anRbRBwtþeRkaykarcUlCaFrmanénbTb,BaØtþienaH': 'បានប្រព្រឹត្តក្រោយការចូលជាធរមាននៃបទប្បញ្ញត្តិនេះ',
+        'maRta 11': 'មាត្រា ១១',
+        'suBlPaBénkic©nItiviFI': 'សុពលភាពនៃកិច្ចនីតិវិធី',
+        'KμanGanuPaBeTAelI': 'គ្មានអនុភាពទៅលើ',
+        'Edl)anbMeBjRsbtambTb,BaØtþicas;eLIy': 'ដែលបានបំពេញស្របតាមបទប្បញ្ញត្តិចាស់ឡើយ',
+        'CMBUkTI 3': 'ជំពូកទី ៣',
+        'karGnuvtþc,ab;RBhμTNÐkm<úCaenAkñúglMh': 'ការអនុវត្តច្បាប់ព្រហ្មទណ្ឌកម្ពុជានៅក្នុងលំហ',
+        'EpñkTI 1': 'ផ្នែកទី ១',
+        'bTelμIsEdl)anRbRBwtþ': 'បទល្មើសដែលបានប្រព្រឹត្ត',
+        'b¤cat;fa)anRbRBwtþenAelIEdndI': 'ឬចាត់ថាបានប្រព្រឹត្តនៅលើដែនដី',
+        'énRBHraCaNacRkkm<úCa': 'នៃព្រះរាជាណាចក្រកម្ពុជា',
+        'maRta 12': 'មាត្រា ១២',
+        'eKalkarN_EdndIénkarGnuvtþc,ab;RBhμTNÐkm<úCa': 'គោលការណ៍ដែនដីនៃការអនុវត្តច្បាប់ព្រហ្មទណ្ឌកម្ពុជា',
+        'kñúgerOgRBhμTNÐ': 'ក្នុងរឿងព្រហ្មទណ្ឌ',
+        'c,ab;km<úCaRtUvGnuvtþeTAelIbTelμIsTaMgLayEdl': 'ច្បាប់កម្ពុជាត្រូវអនុវត្តទៅលើបទល្មើសទាំងឡាយដែល',
+        ')anRbRBwtþenAelIEdndIénRBHraCaNacRkkm<úCa': 'បានប្រព្រឹត្តនៅលើដែនដីនៃព្រះរាជាណាចក្រកម្ពុជា',
+        'EdndIénRBHraCaNacRkkm<úCa': 'ដែនដីនៃព្រះរាជាណាចក្រកម្ពុជា',
+        'rYmbBa©ÚlTaMglMhGakas': 'រួមបញ្ចូលទាំងលំហអាកាស',
+        'nigsmuRT': 'និងសមុទ្រ',
+        'EdlmancMNgcgP¢ab;nwgEdndIénRBHraCaNacRkkm<úCa': 'ដែលមានចំណងភ្ជាប់នឹងដែនដីនៃព្រះរាជាណាចក្រកម្ពុជា',
+        'maRta 13': 'មាត្រា ១៣',
+        'TIkEnøgRbRBwtþbTelμIs': 'ទីកន្លែងប្រព្រឹត្តបទល្មើស',
+        'bTelμIsRtUv)ancat;faRbRBwtþenAelIEdndIénRBHraCaNacRkkm<úCaenA': 'បទល្មើសត្រូវបានចាត់ថាប្រព្រឹត្តនៅលើដែនដីនៃព្រះរាជាណាចក្រកម្ពុជានៅ',
+        'pþnÞ': 'ផ្តន្ទ', 'pþ': 'ផ្ត', 'nÞ': 'ន្ទ', 'ae': 'ោ', 'CasßaBr': 'ជាស្ថាពរ',
+        'F¶': 'ធ្ង', 'c,': 'ច្ប', 'BaØ': 'ប្បញ្ញ', 'ifμ': 'ិថ្ម', 'Pø': 'ភ្ល',
+        'km<úCa': 'កម្ពុជា', 'kñúg': 'ក្នុង', 'lMh': 'លំហ', 'Epñk': 'ផ្នែក',
+        'bTelμIs': 'បទល្មើស', 'EdndI': 'ដែនដី', 'RBHraCaNacRk': 'ព្រះរាជាណាចក្រ',
+        'eKal': 'គោល', 'cMNg': 'ចំណង', 'P¢ab;': 'ភ្ជាប់', 'TIkEnøg': 'ទីកន្លែង',
         'ƶ្ឋ': 'ថ្ងៃ',
         'ȭ': 'ឆ្ន',
         'ŏ': 'ា',
