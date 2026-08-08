@@ -20,6 +20,8 @@ let pageFlipInstance = null;
 let readerThemeFilter = 'normal'; // 'normal' | 'sepia' | 'dark'
 
 let libraryLayoutMode = 'grid'; // 'grid' | 'list'
+let sortMode = 'recent'; // 'recent' | 'name' | 'fav'
+let ttsSpeed = 0.85;
 let bookBookmarks = []; // Array of { bookId, bookTitle, pageNum, note, timestamp }
 let searchMatches = []; // Array of { pageNum, snippet, matchIndex }
 let currentMatchIndex = -1;
@@ -60,6 +62,11 @@ function initStorage() {
         libraryLayoutMode = savedLayout;
         applyLibraryLayout();
 
+        const savedSort = localStorage.getItem('cambodia_law_sort') || 'recent';
+        sortMode = savedSort;
+        const sortSelect = document.getElementById('sort-select');
+        if (sortSelect) sortSelect.value = sortMode;
+
         loadBookmarksStorage();
         
         const savedTheme = localStorage.getItem('cambodia_law_theme') || 'dark';
@@ -82,7 +89,15 @@ function getBookLastPage(bookId) {
 function saveBookLastPage(bookId, pageNum) {
     if (bookId && pageNum > 0) {
         localStorage.setItem(`law_book_last_page_${bookId}`, pageNum.toString());
+        localStorage.setItem('cambodia_law_last_opened_book', JSON.stringify({ bookId, pageNum, timestamp: Date.now() }));
     }
+}
+
+// === Sort Mode Handler ===
+function onSortChange(mode) {
+    sortMode = mode;
+    localStorage.setItem('cambodia_law_sort', sortMode);
+    renderLibrary();
 }
 
 // === Layout Toggle ===
@@ -104,6 +119,44 @@ function applyLibraryLayout() {
         libraryGrid.classList.add('view-grid');
         if (layoutIcon) layoutIcon.textContent = '⊞';
     }
+}
+
+// === Continue Reading Hero Banner ===
+function updateContinueReadingBanner() {
+    const container = document.getElementById('continue-reading-container');
+    if (!container) return;
+
+    try {
+        const lastData = JSON.parse(localStorage.getItem('cambodia_law_last_opened_book') || 'null');
+        if (!lastData || !lastData.bookId) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        const book = allBooks.find(b => b.id === lastData.bookId);
+        if (!book) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        const pageNum = lastData.pageNum || getBookLastPage(book.id) || 1;
+        document.getElementById('continue-book-title').textContent = book.title;
+        document.getElementById('continue-book-meta').textContent = `ទំព័រទី ${pageNum}`;
+        container.classList.remove('hidden');
+
+    } catch(e) {
+        container.classList.add('hidden');
+    }
+}
+
+function resumeLastReadBook() {
+    try {
+        const lastData = JSON.parse(localStorage.getItem('cambodia_law_last_opened_book') || 'null');
+        if (lastData && lastData.bookId) {
+            const book = allBooks.find(b => b.id === lastData.bookId);
+            if (book) openBook(book);
+        }
+    } catch(e) {}
 }
 
 // === Load Library ===
@@ -139,6 +192,8 @@ async function loadLibrary() {
 // === Render Library Grid ===
 function renderLibrary() {
     applyLibraryLayout();
+    updateContinueReadingBanner();
+
     // Filter books
     filteredBooks = allBooks.filter(book => {
         // Category check
@@ -158,6 +213,22 @@ function renderLibrary() {
         return matchCat && matchSearch;
     });
 
+    // Sort books
+    filteredBooks.sort((a, b) => {
+        if (sortMode === 'name') {
+            return a.title.localeCompare(b.title, 'km');
+        } else if (sortMode === 'fav') {
+            const aFav = favoriteBookIds.has(a.id) ? 1 : 0;
+            const bFav = favoriteBookIds.has(b.id) ? 1 : 0;
+            return bFav - aFav;
+        } else {
+            // Recent mode: check last saved page timestamp or book ID
+            const aPage = getBookLastPage(a.id);
+            const bPage = getBookLastPage(b.id);
+            return bPage - aPage;
+        }
+    });
+
     // Update Counts & Badges
     document.getElementById('count-all').textContent = allBooks.length;
     document.getElementById('count-fav').textContent = favoriteBookIds.size;
@@ -172,8 +243,11 @@ function renderLibrary() {
     }
     libraryEmpty.classList.add('hidden');
 
+    const catLabels = { code: 'ក្រម', royal: 'ព្រះរាជក្រឹត្យ', sub: 'អនុក្រឹត្យ', law: 'ច្បាប់' };
+
     filteredBooks.forEach(book => {
         const isFav = favoriteBookIds.has(book.id);
+        const catLabel = catLabels[book.category] || 'ច្បាប់';
         const card = document.createElement('div');
         card.className = book.color ? `book-card book-${book.color}` : 'book-card';
         card.innerHTML = `
@@ -185,6 +259,7 @@ function renderLibrary() {
                 <div class="book-emblem">⚖️</div>
                 <div class="book-title-gold">${book.title}</div>
                 <div class="book-bottom-stripe">ព្រះរាជាណាចក្រកម្ពុជា</div>
+                <div class="book-cat-tag">${catLabel}</div>
             </div>
         `;
         card.addEventListener('click', () => openBook(book));
@@ -684,7 +759,60 @@ function executePageJump() {
     }
 }
 
+// === Fullscreen Reader Mode ===
+function toggleFullscreenReader() {
+    document.body.classList.toggle('reader-fullscreen');
+    const isFs = document.body.classList.contains('reader-fullscreen');
+
+    if (isFs && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    } else if (!isFs && document.exitFullscreen && document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+    }
+
+    showToast(isFs ? 'របៀបមើលពេញអេក្រង់ ⛶' : 'ចាកចេញពីពេញអេក្រង់');
+}
+
+// === Page Grid Thumbnails Modal ===
+function openThumbnailsModal() {
+    if (!pdfDoc) return;
+    const container = document.getElementById('thumbnails-grid-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (let p = 1; p <= totalPages; p++) {
+        const thumb = document.createElement('div');
+        thumb.className = (p === currentPage) ? 'thumb-card active' : 'thumb-card';
+        thumb.innerHTML = `
+            <div class="thumb-icon">📄</div>
+            <div class="thumb-page-num">ទំព័រ ${p}</div>
+        `;
+        const targetP = p;
+        thumb.onclick = () => {
+            jumpToPage(targetP);
+            closeThumbnailsModal();
+        };
+        container.appendChild(thumb);
+    }
+
+    document.getElementById('modal-thumbnails').classList.remove('hidden');
+}
+
+function closeThumbnailsModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('modal-thumbnails').classList.add('hidden');
+}
+
 // === Text to Speech ===
+function setTtsSpeed(val) {
+    ttsSpeed = parseFloat(val) || 0.85;
+    showToast(`ល្បឿនអាន៖ ${ttsSpeed}x`);
+    if (isReading) {
+        stopReading();
+        setTimeout(() => toggleRead(), 200);
+    }
+}
+
 async function toggleRead() {
     if (isReading) {
         stopReading();
@@ -696,6 +824,11 @@ async function toggleRead() {
         isReading = true;
         btnTts.textContent = '⏳ ផ្ទុក...';
         btnTts.classList.add('reading');
+
+        const playerBar = document.getElementById('tts-player-bar');
+        const statusText = document.getElementById('tts-status-text');
+        if (playerBar) playerBar.classList.remove('hidden');
+        if (statusText) statusText.textContent = `កំពុងអានទំព័រទី ${currentPage}...`;
 
         const page = await pdfDoc.getPage(currentPage);
         const textContent = await page.getTextContent();
@@ -718,7 +851,7 @@ async function toggleRead() {
             if (khmerVoice) utterance.voice = khmerVoice;
             
             utterance.lang = 'km-KH';
-            utterance.rate = 0.85;
+            utterance.rate = ttsSpeed;
 
             utterance.onend = () => stopReading();
             utterance.onerror = (e) => {
@@ -771,6 +904,8 @@ function stopReading() {
     try { window.speechSynthesis.cancel(); } catch(e) {}
     btnTts.textContent = '🔊 អានអត្ថបទ';
     btnTts.classList.remove('reading');
+    const playerBar = document.getElementById('tts-player-bar');
+    if (playerBar) playerBar.classList.add('hidden');
 }
 
 // === Toast System ===
@@ -795,7 +930,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.3.1';
+const CURRENT_VERSION = '1.4.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -999,14 +1134,21 @@ function openBookmarksModal() {
         currentBookBms.forEach(bm => {
             const item = document.createElement('div');
             item.className = 'bookmark-item';
+            const noteText = bm.note || `ទំព័រទី ${bm.pageNum}`;
             item.innerHTML = `
-                <div class="bookmark-info">
-                    <span class="bookmark-title">${bm.bookTitle}</span>
-                    <span class="bookmark-page">📍 ទំព័រទី ${bm.pageNum}</span>
+                <div class="bookmark-header-row">
+                    <div class="bookmark-info">
+                        <span class="bookmark-title">${bm.bookTitle}</span>
+                        <span class="bookmark-page">📍 ទំព័រទី ${bm.pageNum}</span>
+                    </div>
+                    <div class="bookmark-actions">
+                        <button class="btn-bookmark-jump" onclick="jumpToPage(${bm.pageNum}); closeBookmarksModal();">ទៅកាន់ទំព័រ</button>
+                        <button class="btn-bookmark-delete" onclick="deleteBookmark(${bm.bookId}, ${bm.pageNum})">✕</button>
+                    </div>
                 </div>
-                <div class="bookmark-actions">
-                    <button class="btn-bookmark-jump" onclick="jumpToPage(${bm.pageNum}); closeBookmarksModal();">ទៅកាន់ទំព័រ</button>
-                    <button class="btn-bookmark-delete" onclick="deleteBookmark(${bm.bookId}, ${bm.pageNum})">✕</button>
+                <div class="bookmark-note-row">
+                    <input type="text" class="bookmark-note-input" id="note-input-${bm.bookId}-${bm.pageNum}" value="${escapeHtmlAttr(noteText)}" placeholder="បន្ថែមចំណាំ (ឧ. មាត្រា ៥ - កិច្ចសន្យា)...">
+                    <button class="btn-save-note" onclick="saveBookmarkNote(${bm.bookId}, ${bm.pageNum})">រក្សាទុក</button>
                 </div>
             `;
             container.appendChild(item);
@@ -1014,6 +1156,23 @@ function openBookmarksModal() {
     }
 
     document.getElementById('modal-bookmarks').classList.remove('hidden');
+}
+
+function escapeHtmlAttr(str) {
+    return (str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function saveBookmarkNote(bookId, pageNum) {
+    const input = document.getElementById(`note-input-${bookId}-${pageNum}`);
+    if (!input) return;
+    const noteText = input.value.trim();
+
+    const bm = bookBookmarks.find(b => b.bookId === bookId && b.pageNum === pageNum);
+    if (bm) {
+        bm.note = noteText || `ទំព័រទី ${pageNum}`;
+        saveBookmarksStorage();
+        showToast('បានរក្សាទុកកំណត់ចំណាំ 📝');
+    }
 }
 
 function closeBookmarksModal(e) {

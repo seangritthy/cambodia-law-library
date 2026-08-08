@@ -18,7 +18,7 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.3.1</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.4.0</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -55,21 +55,48 @@
                 </div>
             </div>
 
-            <!-- Category Pills -->
-            <div class="filter-pills-scroll">
-                <button class="filter-pill active" data-category="all" onclick="setCategoryFilter('all')">ទាំងអស់ <span id="count-all" class="pill-badge">0</span></button>
-                <button class="filter-pill" data-category="fav" onclick="setCategoryFilter('fav')">❤️ ចូលចិត្ត <span id="count-fav" class="pill-badge">0</span></button>
-                <button class="filter-pill" data-category="bookmark" onclick="setCategoryFilter('bookmark')">🔖 ចំណាំ <span id="count-bookmark" class="pill-badge">0</span></button>
-                <button class="filter-pill" data-category="code" onclick="setCategoryFilter('code')">ក្រម</button>
-                <button class="filter-pill" data-category="law" onclick="setCategoryFilter('law')">ច្បាប់</button>
-                <button class="filter-pill" data-category="royal" onclick="setCategoryFilter('royal')">ព្រះរាជក្រឹត្យ</button>
-                <button class="filter-pill" data-category="sub" onclick="setCategoryFilter('sub')">អនុក្រឹត្យ</button>
+            <!-- Category Pills & Sort Row -->
+            <div class="filter-sort-row">
+                <div class="filter-pills-scroll">
+                    <button class="filter-pill active" data-category="all" onclick="setCategoryFilter('all')">ទាំងអស់ <span id="count-all" class="pill-badge">0</span></button>
+                    <button class="filter-pill" data-category="fav" onclick="setCategoryFilter('fav')">❤️ ចូលចិត្ត <span id="count-fav" class="pill-badge">0</span></button>
+                    <button class="filter-pill" data-category="bookmark" onclick="setCategoryFilter('bookmark')">🔖 ចំណាំ <span id="count-bookmark" class="pill-badge">0</span></button>
+                    <button class="filter-pill" data-category="code" onclick="setCategoryFilter('code')">ក្រម</button>
+                    <button class="filter-pill" data-category="law" onclick="setCategoryFilter('law')">ច្បាប់</button>
+                    <button class="filter-pill" data-category="royal" onclick="setCategoryFilter('royal')">ព្រះរាជក្រឹត្យ</button>
+                    <button class="filter-pill" data-category="sub" onclick="setCategoryFilter('sub')">អនុក្រឹត្យ</button>
+                </div>
+                <div class="sort-wrapper">
+                    <select id="sort-select" class="sort-select" onchange="onSortChange(this.value)">
+                        <option value="recent">⏱️ បានបើកថ្មីៗ</option>
+                        <option value="name">🔤 តាមឈ្មោះ (ក-អ)</option>
+                        <option value="fav">❤️ ចូលចិត្តមុន</option>
+                    </select>
+                </div>
             </div>
 
             <div class="stats-bar">
                 <span id="library-count-text">កំពុងបង្ហាញសៀវភៅ...</span>
             </div>
         </header>
+
+        <!-- Continue Reading Section (Hero Banner) -->
+        <div id="continue-reading-container" class="continue-reading-container hidden">
+            <div class="continue-card">
+                <div class="continue-badge">⏱️ បន្តការអាន</div>
+                <div class="continue-content">
+                    <div class="continue-emblem">📖</div>
+                    <div class="continue-info">
+                        <h4 id="continue-book-title" class="continue-title">...</h4>
+                        <p id="continue-book-meta" class="continue-meta">ទំព័រទី 1 / --</p>
+                        <div class="continue-progress-track">
+                            <div id="continue-progress-fill" class="continue-progress-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn-continue-read" onclick="resumeLastReadBook()">▶️ បន្តអាន</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Main Book Grid / List Container -->
         <main id="library-grid" class="lib-grid view-grid"></main>
@@ -108,8 +135,14 @@
                 <button id="btn-reader-toc" class="icon-btn-sm" onclick="openTocModal()" title="បញ្ជីមាតិកា">
                     📑
                 </button>
+                <button id="btn-reader-thumbnails" class="icon-btn-sm" onclick="openThumbnailsModal()" title="ទិដ្ឋភាពទំព័រទាំងអស់">
+                    🖼️
+                </button>
                 <button id="btn-reader-doc-search" class="icon-btn-sm" onclick="toggleDocSearchPanel()" title="ស្វែងរកក្នុងឯកសារ">
                     🔍
+                </button>
+                <button id="btn-fullscreen-toggle" class="icon-btn-sm" onclick="toggleFullscreenReader()" title="របៀបពេញអេក្រង់">
+                    ⛶
                 </button>
                 <button id="btn-mode-toggle" class="icon-btn-sm" onclick="toggleReaderMode()" title="ប្តូររបៀបមើល">
                     📜
@@ -136,6 +169,23 @@
                 <button id="btn-reader-theme" class="sub-btn theme-pill" onclick="cycleReaderFilter()" title="ពណ៌ទំព័រ">
                     <span>🎨</span> <span id="reader-filter-label">ធម្មតា</span>
                 </button>
+            </div>
+        </div>
+
+        <!-- Floating TTS Player Bar -->
+        <div id="tts-player-bar" class="tts-player-bar hidden">
+            <div class="tts-info">
+                <span class="tts-speaker-anim">🔊</span>
+                <span id="tts-status-text" class="tts-status">កំពុងអានអត្ថបទទំព័រ...</span>
+            </div>
+            <div class="tts-controls">
+                <select id="tts-speed-select" class="tts-speed-select" onchange="setTtsSpeed(this.value)">
+                    <option value="0.75">0.75x</option>
+                    <option value="0.85" selected>0.85x</option>
+                    <option value="1.0">1.0x</option>
+                    <option value="1.25">1.25x</option>
+                </select>
+                <button class="btn-tts-stop" onclick="stopReading()">⏹️ ឈប់អាន</button>
             </div>
         </div>
 
@@ -225,7 +275,7 @@
     <div id="modal-bookmarks" class="modal-overlay hidden" onclick="closeBookmarksModal(event)">
         <div class="modal-card bookmarks-modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3>🔖 ទំព័រដែលបានចំណាំ</h3>
+                <h3>🔖 ទំព័រដែលបានចំណាំ និងកំណត់ចំណាំ</h3>
                 <button class="modal-close-btn" onclick="closeBookmarksModal()">✕</button>
             </div>
             <div class="modal-body">
@@ -233,6 +283,22 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeBookmarksModal()">បិទ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Page Grid Thumbnails -->
+    <div id="modal-thumbnails" class="modal-overlay hidden" onclick="closeThumbnailsModal(event)">
+        <div class="modal-card thumbnails-modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>🖼️ ទិដ្ឋភាពទំព័រទាំងអស់</h3>
+                <button class="modal-close-btn" onclick="closeThumbnailsModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="thumbnails-grid-container" class="thumbnails-grid-container"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeThumbnailsModal()">បិទ</button>
             </div>
         </div>
     </div>
