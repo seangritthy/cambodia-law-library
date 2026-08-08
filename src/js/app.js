@@ -1071,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.6.0';
+const CURRENT_VERSION = '2.7.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1542,7 +1542,57 @@ function prevSearchMatch() {
     jumpToSearchMatch(currentMatchIndex);
 }
 
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const dataUrl = reader.result;
+            const base64 = dataUrl.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+async function saveBlobToNativeDevice(blob, filename, mimeType) {
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
+        try {
+            await requestStoragePermission();
+            const base64Data = await blobToBase64(blob);
+
+            try {
+                await window.Capacitor.Plugins.Filesystem.writeFile({
+                    path: filename,
+                    data: base64Data,
+                    directory: 'DOCUMENTS',
+                    recursive: true
+                });
+                showToast(`បានរក្សាទុក ${filename} ក្នុងថត Documents លើទូរស័ព្ទ! 📁`);
+                return true;
+            } catch (err1) {
+                console.warn('DOCUMENTS save error, trying EXTERNAL_STORAGE:', err1);
+                await window.Capacitor.Plugins.Filesystem.writeFile({
+                    path: filename,
+                    data: base64Data,
+                    directory: 'EXTERNAL_STORAGE',
+                    recursive: true
+                });
+                showToast(`បានរក្សាទុក ${filename} ក្នុង Storage លើទូរស័ព្ទ! 📁`);
+                return true;
+            }
+        } catch (fsErr) {
+            console.error('Capacitor Filesystem save error:', fsErr);
+            showToast('មិនអាចរក្សាទុកឯកសារបានទេ (សូមពិនិត្យ Storage Permission)');
+        }
+    }
+    return false;
+}
+
 async function triggerSaveToPicker(blob, filename, mimeType) {
+    const saved = await saveBlobToNativeDevice(blob, filename, mimeType);
+    if (saved) return;
+
     const file = new File([blob], filename, { type: mimeType });
 
     if (window.showSaveFilePicker) {
@@ -1888,12 +1938,18 @@ function copyExtractedText() {
     });
 }
 
-function onImageDownloadClicked(e) {
-    showToast(`កំពុងទាញយករូបភាពទំព័រទី ${currentPage}... 💾`);
+async function onImageDownloadClicked(e) {
+    if (e) e.preventDefault();
+    await downloadPdfPageImage();
 }
 
-function onTextDownloadClicked(e) {
-    showToast(`កំពុងទាញយកឯកសារអត្ថបទ (.txt)... 💾`);
+async function onTextDownloadClicked(e) {
+    if (e) e.preventDefault();
+    if (!currentExtractedText) return;
+    const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
+    const filename = `${bookTitle}_Page_${currentPage}.txt`;
+    const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
+    await triggerSaveToPicker(blob, filename, 'text/plain');
 }
 
 async function shareExtractedText() {
