@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.6.3';
+const CURRENT_VERSION = '1.6.4';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1662,6 +1662,8 @@ function convertLimonToKhmerUnicode(str) {
 
 // === EXPORT PDF PAGE TO TEXT (.txt & Copy) ===
 let currentExtractedText = '';
+let currentRawExtractedText = '';
+let currentDecodedExtractedText = '';
 
 async function exportPdfPageToText() {
     if (!pdfDoc) return;
@@ -1670,10 +1672,17 @@ async function exportPdfPageToText() {
         const page = await pdfDoc.getPage(currentPage);
         const textContent = await page.getTextContent();
 
-        let rawText = textContent.items.map(item => item.str).join(' ').trim();
-        let decodedText = convertLimonToKhmerUnicode(rawText);
+        currentRawExtractedText = textContent.items.map(item => item.str).join(' ').trim();
+        currentDecodedExtractedText = convertLimonToKhmerUnicode(currentRawExtractedText);
 
-        currentExtractedText = decodedText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        const modeSelect = document.getElementById('text-encoding-mode');
+        const mode = modeSelect ? modeSelect.value : 'limon';
+
+        if (mode === 'unicode') {
+            currentExtractedText = currentRawExtractedText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        } else {
+            currentExtractedText = currentDecodedExtractedText || currentRawExtractedText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        }
 
         const txtArea = document.getElementById('pdf-text-extracted-area');
         const pageLabel = document.getElementById('txt-export-page-num');
@@ -1686,6 +1695,22 @@ async function exportPdfPageToText() {
         console.error('PDF to Text error:', err);
         showToast('មិនអាចស្រង់អត្ថបទពីទំព័រនេះបានទេ');
     }
+}
+
+function updateTextEncodingMode() {
+    const modeSelect = document.getElementById('text-encoding-mode');
+    const mode = modeSelect ? modeSelect.value : 'limon';
+
+    if (mode === 'unicode') {
+        currentExtractedText = currentRawExtractedText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+    } else {
+        currentExtractedText = currentDecodedExtractedText || currentRawExtractedText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+    }
+
+    const txtArea = document.getElementById('pdf-text-extracted-area');
+    if (txtArea) txtArea.value = currentExtractedText;
+
+    showToast(mode === 'unicode' ? 'បានប្តូរទៅ៖ 🔤 Unicode / Original Text' : 'បានប្តូរទៅ៖ 🇰🇭 Limon ➔ Khmer Unicode');
 }
 
 function copyExtractedText() {
