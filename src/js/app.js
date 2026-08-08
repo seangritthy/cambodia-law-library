@@ -1035,76 +1035,86 @@ async function toggleRead() {
         const page = await pdfDoc.getPage(currentPage);
         const text = await getOrOcrPageText(page, currentPage);
 
-        if (!text || text.length < 3) {
-            alert('រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (ទោះជាស្កេនរូបភាពរួចហើយ)។');
+        if (!text || text.trim().length < 2) {
+            showToast('រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ');
             stopReading();
             return;
         }
 
         btnTts.textContent = '⏹️ ឈប់អាន';
-
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-
-            const voices = window.speechSynthesis.getVoices();
-            const khmerVoice = voices.find(v => v.lang.startsWith('km') || v.lang.startsWith('kh'));
-
-            if (khmerVoice) {
-                utterance.voice = khmerVoice;
-                utterance.lang = 'km-KH';
-                utterance.rate = ttsSpeed;
-
-                utterance.onend = () => stopReading();
-                utterance.onerror = (e) => {
-                    console.error('Speech error:', e);
-                    playGoogleTTS(text);
-                };
-
-                window.speechSynthesis.speak(utterance);
-
-                setTimeout(() => {
-                    if (isReading && !window.speechSynthesis.speaking) {
-                        playGoogleTTS(text);
-                    }
-                }, 2000);
-
-            } else {
-                // If phone doesn't have native Khmer TTS voice pack, use Google Khmer TTS Online Audio
-                showToast('ទូរស័ព្ទមិនទាន់មាន Voice Pack ខ្មែរទេ! កំពុងប្រើប្រាស់សំឡេង Google Online 🔊');
-                playGoogleTTS(text);
-            }
-
-        } else {
-            playGoogleTTS(text);
-        }
+        speakTextKhmer(text);
 
     } catch (err) {
         console.error('TTS error:', err);
+        showToast('មិនអាចអានសំឡេងបានទេ');
         stopReading();
     }
 }
 
-function playGoogleTTS(text) {
-    const chunks = [];
-    const maxLen = 200;
-    let remaining = text;
-    while (remaining.length > 0) {
-        chunks.push(remaining.substring(0, maxLen));
-        remaining = remaining.substring(maxLen);
+function speakTextKhmer(text) {
+    if (!('speechSynthesis' in window)) {
+        showToast('ទូរស័ព្ទមិនគាំទ្រ Text-to-Speech ទេ');
+        stopReading();
+        return;
     }
 
-    let i = 0;
-    function playChunk() {
-        if (!isReading || i >= chunks.length) { stopReading(); return; }
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunks[i])}&tl=km&client=tw-ob`;
-        const audio = new Audio(url);
-        audio.onended = () => { i++; playChunk(); };
-        audio.onerror = () => { i++; playChunk(); };
-        audio.play().catch(() => { i++; playChunk(); });
-        i++;
+    try { window.speechSynthesis.cancel(); } catch(e) {}
+
+    // Clean up text & normalize spaces
+    const cleanText = text
+        .replace(/[\r\n]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!cleanText) {
+        stopReading();
+        return;
     }
-    playChunk();
+
+    // Split text into manageable sentence chunks for Android TTS engine
+    const sentenceMatches = cleanText.match(/[^.!?។]+[.!?។]?/g);
+    const sentences = (sentenceMatches && sentenceMatches.length > 0) ? sentenceMatches : [cleanText];
+    let idx = 0;
+
+    function speakChunk() {
+        if (!isReading || idx >= sentences.length) {
+            stopReading();
+            return;
+        }
+
+        const chunkText = sentences[idx].trim();
+        if (!chunkText) {
+            idx++;
+            speakChunk();
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(chunkText);
+        utterance.lang = 'km-KH';
+        utterance.rate = ttsSpeed || 0.85;
+        utterance.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices() || [];
+        const khmerVoice = voices.find(v => v.lang && (v.lang.startsWith('km') || v.lang.startsWith('kh')));
+        if (khmerVoice) {
+            utterance.voice = khmerVoice;
+        }
+
+        utterance.onend = () => {
+            idx++;
+            speakChunk();
+        };
+
+        utterance.onerror = (err) => {
+            console.warn('SpeechSynthesis chunk error:', err);
+            idx++;
+            speakChunk();
+        };
+
+        window.speechSynthesis.speak(utterance);
+    }
+
+    speakChunk();
 }
 
 function stopReading() {
@@ -1158,7 +1168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.3.1';
+const CURRENT_VERSION = '3.3.2';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1890,14 +1900,25 @@ async function ocrKhmerPdfPage(page, pageNumber) {
         throw new Error('Tesseract OCR engine is not loaded');
     }
 
-    const result = await Tesseract.recognize(canvas, 'khm', {
+    const workerOptions = {
+        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
+        langPath: 'https://tessdata.projectnaptha.com/4.0.0',
         logger: m => {
             if (m && m.status === 'recognizing text') {
                 const pct = Math.round((m.progress || 0) * 100);
                 showToast(`កំពុងស្កេនរូបភាពទំព័រទី ${pageNumber} (OCR)... ${pct}% 🔍`);
             }
         }
-    });
+    };
+
+    let result;
+    try {
+        result = await Tesseract.recognize(canvas, 'khm+eng', workerOptions);
+    } catch(e1) {
+        console.warn('Tesseract khm+eng failed, trying fallback recognize...', e1);
+        result = await Tesseract.recognize(canvas, 'khm', workerOptions);
+    }
 
     const ocrText = (result && result.data && result.data.text) ? result.data.text.trim() : '';
     if (ocrText) {
@@ -1907,10 +1928,26 @@ async function ocrKhmerPdfPage(page, pageNumber) {
 }
 
 async function getOrOcrPageText(page, pageNumber) {
-    const textContent = await page.getTextContent();
-    const rawText = textContent.items.map(item => item.str).join(' ').trim();
+    let rawText = '';
+    try {
+        const textContent = await page.getTextContent();
+        let lastY = null;
+        for (const item of textContent.items) {
+            if (!item.str) continue;
+            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+                rawText += '\n';
+            } else if (rawText.length > 0 && !rawText.endsWith(' ') && !rawText.endsWith('\n')) {
+                rawText += ' ';
+            }
+            rawText += item.str;
+            lastY = item.transform[5];
+        }
+        rawText = rawText.trim();
+    } catch(e) {
+        console.warn('getTextContent error:', e);
+    }
 
-    if (rawText && rawText.length > 15) {
+    if (rawText && rawText.length > 10) {
         return rawText;
     }
 
@@ -1922,12 +1959,13 @@ async function getOrOcrPageText(page, pageNumber) {
     showToast(`ទំព័រទី ${pageNumber}/${totalPages} គ្មានអត្ថបទ embedded ទេ ➔ កំពុងស្កេន Khmer OCR ស្វ័យប្រវត្តិ... 🔍`);
     try {
         const ocrText = await ocrKhmerPdfPage(page, pageNumber);
-        if (ocrText) {
+        if (ocrText && ocrText.length > 2) {
             showToast(`បានស្កេន Khmer OCR ទំព័រទី ${pageNumber}/${totalPages} រួចរាល់! ✨`);
             return ocrText;
         }
     } catch(err) {
         console.warn('Auto Khmer OCR error on page', pageNumber, err);
+        showToast('មិនអាចស្កេនរូបភាព Khmer OCR បានទេ');
     }
 
     return rawText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
