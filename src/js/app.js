@@ -291,8 +291,10 @@ async function openBook(book) {
     updateReaderFavButton();
     updateZoomDisplay();
 
-    const primaryUrl = book.url ? book.url : 'pdfs/' + book.filename;
-    const localFallbackUrl = 'pdfs/' + book.filename;
+    const localUrl = book.filename ? 'pdfs/' + book.filename : null;
+    const remoteUrl = book.url ? book.url : null;
+    const primaryUrl = localUrl || remoteUrl;
+    const fallbackUrl = remoteUrl || localUrl;
 
     try {
         if (pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
@@ -308,10 +310,10 @@ async function openBook(book) {
                 cMapPacked: true
             }).promise;
         } catch(primaryErr) {
-            console.warn('Primary PDF load failed, trying local fallback:', primaryUrl, primaryErr);
-            if (book.url && book.filename) {
+            console.warn('Primary PDF load failed, trying fallback:', primaryUrl, primaryErr);
+            if (fallbackUrl && fallbackUrl !== primaryUrl) {
                 pdfDoc = await pdfjsLib.getDocument({
-                    url: localFallbackUrl,
+                    url: fallbackUrl,
                     cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
                     cMapPacked: true
                 }).promise;
@@ -399,7 +401,8 @@ async function renderScrollPage(pageNum) {
 
     try {
         const page = await pdfDoc.getPage(pageNum);
-        const containerWidth = pdfScrollContainer.clientWidth - 16;
+        const rawWidth = pdfScrollContainer.clientWidth;
+        const containerWidth = (rawWidth > 100) ? (rawWidth - 16) : Math.max(300, window.innerWidth - 32);
         const viewport = page.getViewport({ scale: 1 });
 
         const devicePixelRatio = window.devicePixelRatio || 2;
