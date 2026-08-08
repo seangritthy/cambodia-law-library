@@ -1038,6 +1038,32 @@ input[type="range"] {
     text-align: right;
 }
 
+@keyframes shimmerBar {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.download-progress-container {
+    width: 260px;
+    margin-top: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    overflow: hidden;
+    height: 12px;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+#download-progress-bar {
+    width: 5%;
+    height: 100%;
+    background: linear-gradient(90deg, #d4af37, #f39c12, #f1c40f, #d4af37);
+    background-size: 200% 100%;
+    animation: shimmerBar 1.5s infinite linear;
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 10px;
+}
+
 /* ===== NEW FEATURES STYLES ===== */
 
 /* 1. Reading Progress Bar */

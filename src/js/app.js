@@ -401,12 +401,16 @@ async function openBook(book) {
 
     function onDownloadProgress(pct, rMB, tMB) {
         if (pct >= 0) {
-            if (progressBar) progressBar.style.width = `${pct}%`;
-            if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${pct}% (${rMB}MB / ${tMB}MB)`;
+            const displayPct = Math.max(5, Math.min(100, pct));
+            if (progressBar) progressBar.style.width = `${displayPct}%`;
+            if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${pct}% (${rMB}MB / ${tMB === '?' ? '~5MB' : tMB + 'MB'})`;
             if (loadingStatusText) loadingStatusText.textContent = `កំពុងទាញយកឯកសារ... ${pct}%`;
         } else {
-            if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${rMB}MB`;
-            if (loadingStatusText) loadingStatusText.textContent = `កំពុងទាញយកឯកសារ... ${rMB}MB`;
+            const rVal = parseFloat(rMB) || 0;
+            const estPct = Math.min(95, Math.max(10, Math.round((rVal / 5.0) * 100)));
+            if (progressBar) progressBar.style.width = `${estPct}%`;
+            if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${estPct}% (${rMB}MB / ~5MB)`;
+            if (loadingStatusText) loadingStatusText.textContent = `កំពុងទាញយកឯកសារ... ${estPct}%`;
         }
     }
 
@@ -490,14 +494,14 @@ async function loadArrayBufferData(url, onProgress) {
                     receivedBytes += value.length;
 
                     if (onProgress) {
+                        const rMB = (receivedBytes / (1024 * 1024)).toFixed(1);
                         if (totalBytes > 0) {
                             const pct = Math.min(100, Math.round((receivedBytes / totalBytes) * 100));
-                            const rMB = (receivedBytes / (1024 * 1024)).toFixed(1);
                             const tMB = (totalBytes / (1024 * 1024)).toFixed(1);
                             onProgress(pct, rMB, tMB);
                         } else {
-                            const rMB = (receivedBytes / (1024 * 1024)).toFixed(1);
-                            onProgress(-1, rMB, 0);
+                            const estPct = Math.min(95, Math.max(10, Math.round((receivedBytes / (5 * 1024 * 1024)) * 100)));
+                            onProgress(estPct, rMB, '?');
                         }
                     }
                 }
@@ -541,14 +545,14 @@ async function loadArrayBufferData(url, onProgress) {
 
         xhr.onprogress = function(event) {
             if (onProgress) {
+                const rMB = (event.loaded / (1024 * 1024)).toFixed(1);
                 if (event.lengthComputable && event.total > 0) {
                     const pct = Math.round((event.loaded / event.total) * 100);
-                    const rMB = (event.loaded / (1024 * 1024)).toFixed(1);
                     const tMB = (event.total / (1024 * 1024)).toFixed(1);
                     onProgress(pct, rMB, tMB);
                 } else {
-                    const rMB = (event.loaded / (1024 * 1024)).toFixed(1);
-                    onProgress(-1, rMB, 0);
+                    const estPct = Math.min(95, Math.max(10, Math.round((event.loaded / (5 * 1024 * 1024)) * 100)));
+                    onProgress(estPct, rMB, '?');
                 }
             }
         };
@@ -580,27 +584,39 @@ async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl, onProgress) 
     const localCMapUrl = 'cmaps/';
     const cdnCMapUrl = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/';
 
+    function loadPdfTask(paramsObj) {
+        const loadingTask = pdfjsLib.getDocument(paramsObj);
+        if (onProgress) {
+            loadingTask.onProgress = function(data) {
+                if (data && data.total > 0) {
+                    const pct = Math.min(100, Math.round((data.loaded / data.total) * 100));
+                    const rMB = (data.loaded / (1024 * 1024)).toFixed(1);
+                    const tMB = (data.total / (1024 * 1024)).toFixed(1);
+                    onProgress(pct, rMB, tMB);
+                } else if (data && data.loaded > 0) {
+                    const rMB = (data.loaded / (1024 * 1024)).toFixed(1);
+                    const estPct = Math.min(95, Math.max(10, Math.round((data.loaded / (5 * 1024 * 1024)) * 100)));
+                    onProgress(estPct, rMB, '?');
+                }
+            };
+        }
+        return loadingTask.promise;
+    }
+
     // 1. Try loading binary ArrayBuffer first (most reliable on Android WebViews & local files)
     for (const url of urlsToTry) {
         if (!url) continue;
         try {
             const buffer = await loadArrayBufferData(url, onProgress);
             if (buffer) {
+                if (onProgress) onProgress(100, (buffer.byteLength / (1024 * 1024)).toFixed(1), (buffer.byteLength / (1024 * 1024)).toFixed(1));
                 try {
-                    return await pdfjsLib.getDocument({
-                        data: buffer,
-                        cMapUrl: localCMapUrl,
-                        cMapPacked: true
-                    }).promise;
+                    return await loadPdfTask({ data: buffer, cMapUrl: localCMapUrl, cMapPacked: true });
                 } catch (e1) {
                     try {
-                        return await pdfjsLib.getDocument({
-                            data: buffer,
-                            cMapUrl: cdnCMapUrl,
-                            cMapPacked: true
-                        }).promise;
+                        return await loadPdfTask({ data: buffer, cMapUrl: cdnCMapUrl, cMapPacked: true });
                     } catch (e2) {
-                        return await pdfjsLib.getDocument({ data: buffer }).promise;
+                        return await loadPdfTask({ data: buffer });
                     }
                 }
             }
@@ -613,21 +629,13 @@ async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl, onProgress) 
     for (const url of urlsToTry) {
         if (!url) continue;
         try {
-            return await pdfjsLib.getDocument({
-                url: url,
-                cMapUrl: localCMapUrl,
-                cMapPacked: true
-            }).promise;
+            return await loadPdfTask({ url: url, cMapUrl: localCMapUrl, cMapPacked: true });
         } catch (e1) {
             try {
-                return await pdfjsLib.getDocument({
-                    url: url,
-                    cMapUrl: cdnCMapUrl,
-                    cMapPacked: true
-                }).promise;
+                return await loadPdfTask({ url: url, cMapUrl: cdnCMapUrl, cMapPacked: true });
             } catch (e2) {
                 try {
-                    return await pdfjsLib.getDocument({ url: url }).promise;
+                    return await loadPdfTask({ url: url });
                 } catch (e3) {
                     console.warn('URL load failed for:', url, e3);
                 }
@@ -1212,7 +1220,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.4.1';
+const CURRENT_VERSION = '3.4.2';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
