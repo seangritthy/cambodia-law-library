@@ -19,6 +19,12 @@ let viewMode = 'scroll'; // 'scroll' | 'flip'
 let pageFlipInstance = null;
 let readerThemeFilter = 'normal'; // 'normal' | 'sepia' | 'dark'
 
+let libraryLayoutMode = 'grid'; // 'grid' | 'list'
+let bookBookmarks = []; // Array of { bookId, bookTitle, pageNum, note, timestamp }
+let searchMatches = []; // Array of { pageNum, snippet, matchIndex }
+let currentMatchIndex = -1;
+let docSearchQuery = '';
+
 // === DOM Cache ===
 const screenLibrary = document.getElementById('screen-library');
 const screenReader = document.getElementById('screen-reader');
@@ -49,6 +55,12 @@ function initStorage() {
     try {
         const savedFavs = JSON.parse(localStorage.getItem('cambodia_law_favs') || '[]');
         favoriteBookIds = new Set(savedFavs);
+
+        const savedLayout = localStorage.getItem('cambodia_law_layout') || 'grid';
+        libraryLayoutMode = savedLayout;
+        applyLibraryLayout();
+
+        loadBookmarksStorage();
         
         const savedTheme = localStorage.getItem('cambodia_law_theme') || 'dark';
         applyTheme(savedTheme);
@@ -70,6 +82,27 @@ function getBookLastPage(bookId) {
 function saveBookLastPage(bookId, pageNum) {
     if (bookId && pageNum > 0) {
         localStorage.setItem(`law_book_last_page_${bookId}`, pageNum.toString());
+    }
+}
+
+// === Layout Toggle ===
+function toggleLibraryLayout() {
+    libraryLayoutMode = (libraryLayoutMode === 'grid') ? 'list' : 'grid';
+    localStorage.setItem('cambodia_law_layout', libraryLayoutMode);
+    applyLibraryLayout();
+}
+
+function applyLibraryLayout() {
+    const layoutIcon = document.getElementById('layout-icon');
+    if (!libraryGrid) return;
+    if (libraryLayoutMode === 'list') {
+        libraryGrid.classList.remove('view-grid');
+        libraryGrid.classList.add('view-list');
+        if (layoutIcon) layoutIcon.textContent = '☰';
+    } else {
+        libraryGrid.classList.remove('view-list');
+        libraryGrid.classList.add('view-grid');
+        if (layoutIcon) layoutIcon.textContent = '⊞';
     }
 }
 
@@ -105,12 +138,14 @@ async function loadLibrary() {
 
 // === Render Library Grid ===
 function renderLibrary() {
+    applyLibraryLayout();
     // Filter books
     filteredBooks = allBooks.filter(book => {
         // Category check
         let matchCat = false;
         if (activeCategory === 'all') matchCat = true;
         else if (activeCategory === 'fav') matchCat = favoriteBookIds.has(book.id);
+        else if (activeCategory === 'bookmark') matchCat = getBookmarkedPageIds().has(book.id);
         else matchCat = (book.category === activeCategory);
 
         // Search check
@@ -290,6 +325,9 @@ async function openBook(book) {
 
         pageIndicator.textContent = `${currentPage} / ${totalPages}`;
         readerLoading.classList.add('hidden');
+
+        updateReadingProgressBar();
+        updateBookmarkButton();
 
         if (lastSavedPage > 1) {
             showToast(`បន្តពីទំព័រទី ${lastSavedPage}`);
@@ -503,6 +541,8 @@ function onScroll() {
         currentPage = closestPage;
         pageIndicator.textContent = `${currentPage} / ${totalPages}`;
         saveBookLastPage(currentBook ? currentBook.id : null, currentPage);
+        updateReadingProgressBar();
+        updateBookmarkButton();
         if (isReading) stopReading();
     }
 }
@@ -524,6 +564,8 @@ function jumpToPage(pageNum) {
     currentPage = pageNum;
     pageIndicator.textContent = `${currentPage} / ${totalPages}`;
     saveBookLastPage(currentBook ? currentBook.id : null, currentPage);
+    updateReadingProgressBar();
+    updateBookmarkButton();
 
     if (viewMode === 'scroll') {
         scrollToPage(currentPage);
@@ -750,7 +792,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.2.8';
+const CURRENT_VERSION = '1.3.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -873,6 +915,351 @@ function downloadAndInstallUpdate() {
         window.location.href = apkUrl;
     }
 }
+
+// === READING PROGRESS BAR ===
+function updateReadingProgressBar() {
+    const fill = document.getElementById('reading-progress-fill');
+    if (fill && totalPages > 0) {
+        const pct = Math.min(100, Math.max(0, (currentPage / totalPages) * 100));
+        fill.style.width = pct + '%';
+    }
+}
+
+// === BOOKMARKS MANAGEMENT ===
+function loadBookmarksStorage() {
+    try {
+        bookBookmarks = JSON.parse(localStorage.getItem('cambodia_law_bookmarks') || '[]');
+    } catch(e) {
+        bookBookmarks = [];
+    }
+}
+
+function saveBookmarksStorage() {
+    try {
+        localStorage.setItem('cambodia_law_bookmarks', JSON.stringify(bookBookmarks));
+    } catch(e) {}
+}
+
+function getBookmarkedPageIds() {
+    const set = new Set();
+    bookBookmarks.forEach(bm => set.add(bm.bookId));
+    return set;
+}
+
+function toggleCurrentPageBookmark() {
+    if (!currentBook) return;
+    const existingIndex = bookBookmarks.findIndex(bm => bm.bookId === currentBook.id && bm.pageNum === currentPage);
+    if (existingIndex >= 0) {
+        bookBookmarks.splice(existingIndex, 1);
+        showToast(`បានលុបចំណាំទំព័រទី ${currentPage}`);
+    } else {
+        bookBookmarks.push({
+            bookId: currentBook.id,
+            bookTitle: currentBook.title,
+            pageNum: currentPage,
+            note: `ទំព័រទី ${currentPage}`,
+            timestamp: Date.now()
+        });
+        showToast(`បានចំណាំទំព័រទី ${currentPage} 🔖`);
+    }
+    saveBookmarksStorage();
+    updateBookmarkButton();
+}
+
+function updateBookmarkButton() {
+    const btnBookmark = document.getElementById('btn-reader-bookmark');
+    const labelCount = document.getElementById('bookmarks-count-label');
+    
+    if (currentBook) {
+        const isBm = bookBookmarks.some(bm => bm.bookId === currentBook.id && bm.pageNum === currentPage);
+        if (btnBookmark) btnBookmark.textContent = isBm ? '🏷️' : '🔖';
+
+        const currentBookBms = bookBookmarks.filter(bm => bm.bookId === currentBook.id);
+        if (labelCount) labelCount.textContent = `ចំណាំ (${currentBookBms.length})`;
+    }
+}
+
+function openBookmarksModal() {
+    const container = document.getElementById('bookmarks-list-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!currentBook) return;
+    const currentBookBms = bookBookmarks.filter(bm => bm.bookId === currentBook.id);
+
+    const countBookmarkBadge = document.getElementById('count-bookmark');
+    if (countBookmarkBadge) countBookmarkBadge.textContent = getBookmarkedPageIds().size;
+
+    if (currentBookBms.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:24px;">មិនទាន់មានទំព័រដែលបានចំណាំក្នុងសៀវភៅនេះនៅឡើយទេ</p>';
+    } else {
+        currentBookBms.forEach(bm => {
+            const item = document.createElement('div');
+            item.className = 'bookmark-item';
+            item.innerHTML = `
+                <div class="bookmark-info">
+                    <span class="bookmark-title">${bm.bookTitle}</span>
+                    <span class="bookmark-page">📍 ទំព័រទី ${bm.pageNum}</span>
+                </div>
+                <div class="bookmark-actions">
+                    <button class="btn-bookmark-jump" onclick="jumpToPage(${bm.pageNum}); closeBookmarksModal();">ទៅកាន់ទំព័រ</button>
+                    <button class="btn-bookmark-delete" onclick="deleteBookmark(${bm.bookId}, ${bm.pageNum})">✕</button>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    document.getElementById('modal-bookmarks').classList.remove('hidden');
+}
+
+function closeBookmarksModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('modal-bookmarks').classList.add('hidden');
+}
+
+function deleteBookmark(bookId, pageNum) {
+    bookBookmarks = bookBookmarks.filter(bm => !(bm.bookId === bookId && bm.pageNum === pageNum));
+    saveBookmarksStorage();
+    updateBookmarkButton();
+    openBookmarksModal();
+    showToast('បានលុបចំណាំ');
+}
+
+// === TABLE OF CONTENTS (TOC) ===
+function openTocModal() {
+    document.getElementById('modal-toc').classList.remove('hidden');
+    loadTableOfContents();
+}
+
+function closeTocModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('modal-toc').classList.add('hidden');
+}
+
+async function loadTableOfContents() {
+    const container = document.getElementById('toc-container');
+    if (!container) return;
+    if (!pdfDoc) {
+        container.innerHTML = '<p class="toc-empty">មិនទាន់បានផ្ទុកឯកសារទេ</p>';
+        return;
+    }
+    container.innerHTML = '<p class="toc-loading">កំពុងទាញយកបញ្ជីមាតិកា...</p>';
+
+    try {
+        const outline = await pdfDoc.getOutline();
+        if (outline && outline.length > 0) {
+            container.innerHTML = '';
+            await renderOutlineItems(outline, container, 1);
+            return;
+        }
+
+        // Auto-generate TOC by scanning pages for key Khmer legal headings
+        const autoToc = [];
+        const scanPages = Math.min(20, totalPages);
+        const headingRegex = /(ជំពូកទី\s*[\u17e0-\u17e9\d]+|ផ្នែកទី\s*[\u17e0-\u17e9\d]+|មាត្រា\s*[\u17e0-\u17e9\d]+|មាតិកា|អារម្ភកថា)/gi;
+
+        for (let p = 1; p <= scanPages; p++) {
+            const page = await pdfDoc.getPage(p);
+            const content = await page.getTextContent();
+            const fullText = content.items.map(item => item.str).join(' ');
+            let match;
+            while ((match = headingRegex.exec(fullText)) !== null) {
+                const title = match[0].trim();
+                if (!autoToc.some(t => t.title === title && t.pageNum === p)) {
+                    const level = title.includes('ជំពូក') ? 1 : (title.includes('ផ្នែក') ? 2 : 3);
+                    autoToc.push({ title, pageNum: p, level });
+                }
+            }
+        }
+
+        if (autoToc.length > 0) {
+            container.innerHTML = '';
+            autoToc.forEach(item => {
+                const el = document.createElement('div');
+                el.className = `toc-item toc-item-level-${item.level}`;
+                el.innerHTML = `
+                    <span class="toc-item-title">${item.title}</span>
+                    <span class="toc-item-page">ទំព័រ ${item.pageNum}</span>
+                `;
+                el.onclick = () => {
+                    jumpToPage(item.pageNum);
+                    closeTocModal();
+                };
+                container.appendChild(el);
+            });
+        } else {
+            container.innerHTML = '<p class="toc-empty">ឯកសារនេះមិនមានបញ្ជីមាតិកា (Outline) ស្រាប់ទេ</p>';
+        }
+
+    } catch(err) {
+        console.error('TOC load error:', err);
+        container.innerHTML = '<p class="toc-empty">មិនអាចផ្ទុកមាតិកាបានទេ</p>';
+    }
+}
+
+async function renderOutlineItems(items, parentElement, level) {
+    for (const item of items) {
+        let pageNum = 1;
+        if (item.dest) {
+            try {
+                if (typeof item.dest === 'string') {
+                    const destRef = await pdfDoc.getDestination(item.dest);
+                    if (destRef) {
+                        const pageIdx = await pdfDoc.getPageIndex(destRef[0]);
+                        pageNum = pageIdx + 1;
+                    }
+                } else if (Array.isArray(item.dest) && item.dest[0]) {
+                    const pageIdx = await pdfDoc.getPageIndex(item.dest[0]);
+                    pageNum = pageIdx + 1;
+                }
+            } catch(e) {}
+        }
+
+        const el = document.createElement('div');
+        el.className = `toc-item toc-item-level-${Math.min(3, level)}`;
+        el.innerHTML = `
+            <span class="toc-item-title">${item.title}</span>
+            <span class="toc-item-page">ទំព័រ ${pageNum}</span>
+        `;
+        const targetPage = pageNum;
+        el.onclick = () => {
+            jumpToPage(targetPage);
+            closeTocModal();
+        };
+        parentElement.appendChild(el);
+
+        if (item.items && item.items.length > 0) {
+            await renderOutlineItems(item.items, parentElement, level + 1);
+        }
+    }
+}
+
+// === IN-DOCUMENT SEARCH PANEL & SEARCH ENGINE ===
+function toggleDocSearchPanel() {
+    const panel = document.getElementById('doc-search-panel');
+    const input = document.getElementById('doc-search-input');
+    if (!panel) return;
+    const isHidden = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+    if (isHidden && input) {
+        input.focus();
+    }
+}
+
+async function executeDocSearch() {
+    const input = document.getElementById('doc-search-input');
+    const query = input ? input.value.trim() : '';
+    if (!query) return;
+
+    docSearchQuery = query;
+    searchMatches = [];
+    currentMatchIndex = -1;
+
+    const countBadge = document.getElementById('doc-search-count');
+    const controls = document.getElementById('doc-search-controls');
+    const resultsList = document.getElementById('doc-search-results-list');
+    
+    if (countBadge) countBadge.textContent = 'កំពុងស្វែងរក...';
+    if (controls) controls.classList.remove('hidden');
+    if (resultsList) resultsList.innerHTML = '';
+
+    showToast(`កំពុងស្វែងរកពាក្យ "${query}" ក្នុងឯកសារ...`);
+
+    const qLower = query.toLowerCase();
+
+    for (let p = 1; p <= totalPages; p++) {
+        try {
+            const page = await pdfDoc.getPage(p);
+            const content = await page.getTextContent();
+            const pageText = content.items.map(i => i.str).join(' ');
+            
+            let idx = pageText.toLowerCase().indexOf(qLower);
+            while (idx !== -1) {
+                const startSnippet = Math.max(0, idx - 25);
+                const endSnippet = Math.min(pageText.length, idx + query.length + 35);
+                const rawSnippet = pageText.substring(startSnippet, endSnippet);
+
+                const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+                const highlightedSnippet = rawSnippet.replace(regex, '<mark>$1</mark>');
+
+                searchMatches.push({
+                    pageNum: p,
+                    snippet: '...' + highlightedSnippet + '...',
+                    matchIndex: searchMatches.length
+                });
+
+                idx = pageText.toLowerCase().indexOf(qLower, idx + query.length);
+            }
+        } catch(e) {}
+    }
+
+    if (searchMatches.length > 0) {
+        currentMatchIndex = 0;
+        updateSearchMatchesUI();
+        jumpToSearchMatch(0);
+        showToast(`រកឃើញ ${searchMatches.length} ផល!`);
+    } else {
+        if (countBadge) countBadge.textContent = 'រកមិនឃើញផល';
+        showToast(`រកមិនឃើញពាក្យ "${query}" ក្នុងឯកសារនេះទេ`);
+    }
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function updateSearchMatchesUI() {
+    const countBadge = document.getElementById('doc-search-count');
+    const resultsList = document.getElementById('doc-search-results-list');
+
+    if (countBadge) {
+        countBadge.textContent = `${currentMatchIndex + 1} / ${searchMatches.length} ផល`;
+    }
+
+    if (resultsList) {
+        resultsList.innerHTML = '';
+        searchMatches.forEach((m, i) => {
+            const item = document.createElement('div');
+            item.className = (i === currentMatchIndex) ? 'search-result-item active' : 'search-result-item';
+            item.innerHTML = `
+                <span class="search-result-page-badge">ទំព័រ ${m.pageNum}</span>
+                <span class="search-result-snippet">${m.snippet}</span>
+            `;
+            item.onclick = () => jumpToSearchMatch(i);
+            resultsList.appendChild(item);
+        });
+    }
+}
+
+function prevSearchMatch() {
+    if (searchMatches.length === 0) return;
+    currentMatchIndex = (currentMatchIndex - 1 + searchMatches.length) % searchMatches.length;
+    updateSearchMatchesUI();
+    jumpToSearchMatch(currentMatchIndex);
+}
+
+function nextSearchMatch() {
+    if (searchMatches.length === 0) return;
+    currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
+    updateSearchMatchesUI();
+    jumpToSearchMatch(currentMatchIndex);
+}
+
+function jumpToSearchMatch(index) {
+    if (index >= 0 && index < searchMatches.length) {
+        const match = searchMatches[index];
+        jumpToPage(match.pageNum);
+    }
+}
+
+function toggleSearchResultsList() {
+    const resultsList = document.getElementById('doc-search-results-list');
+    if (resultsList) {
+        resultsList.classList.toggle('hidden');
+    }
+}
+
 
 
 

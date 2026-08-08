@@ -991,5 +991,331 @@ input[type="range"] {
     text-align: right;
 }
 
+/* ===== NEW FEATURES STYLES ===== */
+
+/* 1. Reading Progress Bar */
+.reading-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    z-index: 120;
+}
+
+.reading-progress-bar .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #eab308, #10b981);
+    transition: width 0.2s ease-out;
+}
+
+/* 2. Library List Layout View Mode */
+.lib-grid.view-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+}
+
+.lib-grid.view-list .book-card {
+    height: auto;
+    min-height: 80px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.lib-grid.view-list .book-spine {
+    width: 6px;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.lib-grid.view-list .book-cover-content {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    margin-left: 10px;
+}
+
+.lib-grid.view-list .book-emblem {
+    font-size: 24px;
+    margin-bottom: 0;
+}
+
+.lib-grid.view-list .book-title-gold {
+    font-size: 14px;
+    text-align: left;
+    -webkit-line-clamp: 2;
+}
+
+.lib-grid.view-list .book-bottom-stripe {
+    display: none;
+}
+
+/* 3. In-Document Search Panel */
+.doc-search-panel {
+    background: var(--bg-header);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    z-index: 90;
+    animation: fadeIn 0.2s ease;
+}
+
+.doc-search-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0 10px;
+}
+
+.doc-search-input-row input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 0;
+}
+
+.btn-doc-search-exec {
+    background: var(--accent-blue);
+    color: #ffffff;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+.btn-doc-search-exec:hover { background: var(--accent-blue-hover); }
+
+.doc-search-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 4px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.search-count-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-gold);
+}
+
+.doc-search-nav-group {
+    display: flex;
+    gap: 6px;
+}
+
+.doc-search-nav-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.doc-search-nav-btn:hover { background: var(--border-color); }
+
+.doc-search-results-list {
+    max-height: 180px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+    padding-right: 4px;
+}
+
+.search-result-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.15s, border-color 0.15s;
+}
+.search-result-item:hover, .search-result-item.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--accent-blue);
+}
+
+.search-result-page-badge {
+    background: var(--accent-blue);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.search-result-snippet {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.search-result-snippet mark {
+    background: rgba(234, 179, 8, 0.35);
+    color: var(--accent-gold);
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+/* 4. TOC Modal & Items */
+.toc-modal-card, .bookmarks-modal-card {
+    max-width: 540px;
+    width: 90%;
+}
+
+.toc-container {
+    max-height: 380px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toc-loading, .toc-empty {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.toc-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.toc-item:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent-blue);
+}
+
+.toc-item-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+    padding-right: 12px;
+}
+.toc-item-level-1 { font-weight: 700; color: var(--accent-gold); }
+.toc-item-level-2 { padding-left: 16px; }
+.toc-item-level-3 { padding-left: 32px; font-size: 12px; }
+
+.toc-item-page {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* 5. Bookmarks List Items */
+.bookmarks-list-container {
+    max-height: 360px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bookmark-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+}
+
+.bookmark-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.bookmark-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bookmark-page {
+    font-size: 11px;
+    color: var(--accent-gold);
+}
+
+.bookmark-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-bookmark-jump {
+    background: var(--accent-blue);
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.btn-bookmark-delete {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--accent-red);
+    border: none;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+
 
 

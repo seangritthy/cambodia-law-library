@@ -18,10 +18,13 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.2.8</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.3.0</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
+                    <button id="btn-view-layout" class="icon-btn" title="ទិដ្ឋភាព" onclick="toggleLibraryLayout()">
+                        <span id="layout-icon">⊞</span>
+                    </button>
                     <button id="btn-check-update" class="icon-btn" title="ពិនិត្យមើលអាប់ដេត" onclick="checkForUpdates(true)">
                         <span>🔄</span>
                     </button>
@@ -56,6 +59,7 @@
             <div class="filter-pills-scroll">
                 <button class="filter-pill active" data-category="all" onclick="setCategoryFilter('all')">ទាំងអស់ <span id="count-all" class="pill-badge">0</span></button>
                 <button class="filter-pill" data-category="fav" onclick="setCategoryFilter('fav')">❤️ ចូលចិត្ត <span id="count-fav" class="pill-badge">0</span></button>
+                <button class="filter-pill" data-category="bookmark" onclick="setCategoryFilter('bookmark')">🔖 ចំណាំ <span id="count-bookmark" class="pill-badge">0</span></button>
                 <button class="filter-pill" data-category="code" onclick="setCategoryFilter('code')">ក្រម</button>
                 <button class="filter-pill" data-category="law" onclick="setCategoryFilter('law')">ច្បាប់</button>
                 <button class="filter-pill" data-category="royal" onclick="setCategoryFilter('royal')">ព្រះរាជក្រឹត្យ</button>
@@ -67,8 +71,8 @@
             </div>
         </header>
 
-        <!-- Main Book Grid -->
-        <main id="library-grid" class="lib-grid"></main>
+        <!-- Main Book Grid / List Container -->
+        <main id="library-grid" class="lib-grid view-grid"></main>
 
         <!-- Empty State -->
         <div id="library-empty" class="empty-state hidden">
@@ -81,6 +85,11 @@
 
     <!-- SCREEN 2: Reader -->
     <div id="screen-reader" class="hidden">
+        <!-- Top Reading Progress Indicator Line -->
+        <div id="reading-progress-bar" class="reading-progress-bar">
+            <div id="reading-progress-fill" class="progress-fill" style="width: 0%;"></div>
+        </div>
+
         <!-- Top Reader Navbar -->
         <div class="reader-topbar">
             <button id="btn-reader-back" class="nav-icon-btn" onclick="closeBook()" title="ត្រឡប់ក្រោយ">
@@ -92,6 +101,15 @@
             <div class="reader-actions">
                 <button id="btn-reader-fav" class="icon-btn-sm" onclick="toggleCurrentBookFavorite()" title="រក្សាទុកក្នុងបញ្ជីចូលចិត្ត">
                     🤍
+                </button>
+                <button id="btn-reader-bookmark" class="icon-btn-sm" onclick="toggleCurrentPageBookmark()" title="ចំណាំទំព័រនេះ">
+                    🔖
+                </button>
+                <button id="btn-reader-toc" class="icon-btn-sm" onclick="openTocModal()" title="បញ្ជីមាតិកា">
+                    📑
+                </button>
+                <button id="btn-reader-doc-search" class="icon-btn-sm" onclick="toggleDocSearchPanel()" title="ស្វែងរកក្នុងឯកសារ">
+                    🔍
                 </button>
                 <button id="btn-mode-toggle" class="icon-btn-sm" onclick="toggleReaderMode()" title="ប្តូររបៀបមើល">
                     📜
@@ -112,10 +130,32 @@
             </div>
             
             <div class="subbar-group">
+                <button id="btn-reader-bookmarks-list" class="sub-btn theme-pill" onclick="openBookmarksModal()" title="បញ្ជីចំណាំ">
+                    <span>🔖</span> <span id="bookmarks-count-label">ចំណាំ (0)</span>
+                </button>
                 <button id="btn-reader-theme" class="sub-btn theme-pill" onclick="cycleReaderFilter()" title="ពណ៌ទំព័រ">
                     <span>🎨</span> <span id="reader-filter-label">ធម្មតា</span>
                 </button>
             </div>
+        </div>
+
+        <!-- Floating In-Document Search Panel -->
+        <div id="doc-search-panel" class="doc-search-panel hidden">
+            <div class="doc-search-input-row">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="doc-search-input" placeholder="ស្វែងរកពាក្យក្នុងឯកសារ PDF (ឧ. មាត្រា, កិច្ចសន្យា)..." onkeydown="if(event.key==='Enter') executeDocSearch()">
+                <button class="btn-doc-search-exec" onclick="executeDocSearch()">ស្វែងរក</button>
+                <button class="search-clear-btn" onclick="toggleDocSearchPanel()">✕</button>
+            </div>
+            <div id="doc-search-controls" class="doc-search-controls hidden">
+                <span id="doc-search-count" class="search-count-badge">0 / 0 ផល</span>
+                <div class="doc-search-nav-group">
+                    <button class="doc-search-nav-btn" onclick="prevSearchMatch()">⬆️ មុន</button>
+                    <button class="doc-search-nav-btn" onclick="nextSearchMatch()">⬇️ បន្ទាប់</button>
+                    <button id="btn-toggle-results-list" class="doc-search-nav-btn" onclick="toggleSearchResultsList()">📋 បញ្ជីផល</button>
+                </div>
+            </div>
+            <div id="doc-search-results-list" class="doc-search-results-list hidden"></div>
         </div>
 
         <!-- Loading State -->
@@ -159,6 +199,40 @@
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closePageJumpModal()">បោះបង់</button>
                 <button class="btn-primary" onclick="executePageJump()">ទៅកាន់ទំព័រ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Table of Contents (TOC) -->
+    <div id="modal-toc" class="modal-overlay hidden" onclick="closeTocModal(event)">
+        <div class="modal-card toc-modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>📑 បញ្ជីមាតិកាច្បាប់</h3>
+                <button class="modal-close-btn" onclick="closeTocModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="toc-container" class="toc-container">
+                    <p class="toc-loading">កំពុងទាញយកបញ្ជីមាតិកា...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeTocModal()">បិទ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Bookmarks & Notes -->
+    <div id="modal-bookmarks" class="modal-overlay hidden" onclick="closeBookmarksModal(event)">
+        <div class="modal-card bookmarks-modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>🔖 ទំព័រដែលបានចំណាំ</h3>
+                <button class="modal-close-btn" onclick="closeBookmarksModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="bookmarks-list-container" class="bookmarks-list-container"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeBookmarksModal()">បិទ</button>
             </div>
         </div>
     </div>
