@@ -250,21 +250,77 @@ function renderLibrary() {
         const catLabel = catLabels[book.category] || 'ច្បាប់';
         const card = document.createElement('div');
         card.className = book.color ? `book-card book-${book.color}` : 'book-card';
+        const favIdArg = typeof book.id === 'string' ? `'${book.id}'` : book.id;
+        
         card.innerHTML = `
-            <button class="book-fav-btn" onclick="event.stopPropagation(); toggleBookFavorite(${book.id})" title="ចូលចិត្ត">
+            <button class="book-fav-btn" onclick="event.stopPropagation(); toggleBookFavorite(${favIdArg})" title="ចូលចិត្ត">
                 ${isFav ? '❤️' : '🤍'}
             </button>
             <div class="book-spine"></div>
-            <div class="book-cover-content">
-                <div class="book-emblem">⚖️</div>
-                <div class="book-title-gold">${book.title}</div>
-                <div class="book-bottom-stripe">ព្រះរាជាណាចក្រកម្ពុជា</div>
-                <div class="book-cat-tag">${catLabel}</div>
+            <div class="book-cover-wrapper">
+                <div class="book-cover-thumb-container" id="cover-thumb-${book.id}">
+                    <div class="book-cover-shimmer"></div>
+                </div>
+                <div class="book-cover-content" id="cover-fallback-${book.id}">
+                    <div class="book-emblem">⚖️</div>
+                    <div class="book-title-gold">${book.title}</div>
+                    <div class="book-bottom-stripe">ព្រះរាជាណាចក្រកម្ពុជា</div>
+                    <div class="book-cat-tag">${catLabel}</div>
+                </div>
             </div>
         `;
         card.addEventListener('click', () => openBook(book));
         libraryGrid.appendChild(card);
+
+        const thumbContainer = card.querySelector(`#cover-thumb-${book.id}`);
+        const fallbackContainer = card.querySelector(`#cover-fallback-${book.id}`);
+        renderPdfCoverThumbnail(book, thumbContainer, fallbackContainer);
     });
+}
+
+// === PDF Original Cover Page Renderer ===
+const pdfCoverThumbnailCache = new Map();
+
+async function renderPdfCoverThumbnail(book, thumbContainer, fallbackContainer) {
+    if (!thumbContainer) return;
+    if (pdfCoverThumbnailCache.has(book.id)) {
+        const cachedDataUrl = pdfCoverThumbnailCache.get(book.id);
+        if (cachedDataUrl) {
+            thumbContainer.innerHTML = `<img src="${cachedDataUrl}" class="book-cover-img" alt="${book.title}" />`;
+            if (fallbackContainer) fallbackContainer.style.opacity = '0';
+            return;
+        }
+    }
+
+    const localUrl = book.filename ? 'pdfs/' + book.filename : null;
+    const remoteUrl = book.url ? book.url : null;
+    const primaryUrl = localUrl || remoteUrl;
+    const secondaryUrl = remoteUrl || localUrl;
+
+    if (!primaryUrl) return;
+
+    try {
+        const doc = await getPdfDocumentWithFallbacks(primaryUrl, secondaryUrl);
+        const page = await doc.getPage(1);
+        
+        const canvas = document.createElement('canvas');
+        const viewport = page.getViewport({ scale: 0.35 });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        pdfCoverThumbnailCache.set(book.id, dataUrl);
+
+        thumbContainer.innerHTML = `<img src="${dataUrl}" class="book-cover-img" alt="${book.title}" />`;
+        if (fallbackContainer) fallbackContainer.style.opacity = '0';
+    } catch(e) {
+        // Keep fallback template cover if PDF page 1 cannot be rendered
+        thumbContainer.style.display = 'none';
+        if (fallbackContainer) fallbackContainer.style.opacity = '1';
+    }
 }
 
 // === Search & Category Handlers ===
