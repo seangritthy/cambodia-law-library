@@ -408,25 +408,85 @@ async function openBook(book) {
     }
 }
 
-// === Robust PDF Document Loader ===
-async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl) {
-    const attempts = [
-        { url: primaryUrl, cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/', cMapPacked: true },
-        { url: primaryUrl },
-    ];
-    if (fallbackUrl && fallbackUrl !== primaryUrl) {
-        attempts.push({ url: fallbackUrl, cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/', cMapPacked: true });
-        attempts.push({ url: fallbackUrl });
+// === Robust PDF Binary & Document Loader ===
+async function loadArrayBufferData(url) {
+    if (!url) return null;
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            return await response.arrayBuffer();
+        }
+    } catch (e) {
+        console.warn('Fetch ArrayBuffer failed for:', url, e);
     }
-    for (const opt of attempts) {
+
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
+            if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 0) {
+                if (xhr.response && xhr.response.byteLength > 0) {
+                    resolve(xhr.response);
+                } else {
+                    reject(new Error(`XHR response empty for ${url}`));
+                }
+            } else {
+                reject(new Error(`XHR failed: ${xhr.status} for ${url}`));
+            }
+        };
+        xhr.onerror = function(err) {
+            reject(new Error(`XHR network error for ${url}`));
+        };
+        xhr.send();
+    });
+}
+
+async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl) {
+    const urlsToTry = [primaryUrl];
+    if (fallbackUrl && fallbackUrl !== primaryUrl) {
+        urlsToTry.push(fallbackUrl);
+    }
+
+    // 1. Try loading binary ArrayBuffer first (most reliable on Android WebViews & local files)
+    for (const url of urlsToTry) {
+        if (!url) continue;
         try {
-            const task = pdfjsLib.getDocument(opt);
-            const doc = await task.promise;
-            if (doc) return doc;
-        } catch(e) {
-            console.warn('PDF load attempt failed:', opt.url, e);
+            const buffer = await loadArrayBufferData(url);
+            if (buffer) {
+                try {
+                    return await pdfjsLib.getDocument({
+                        data: buffer,
+                        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+                        cMapPacked: true
+                    }).promise;
+                } catch (e1) {
+                    return await pdfjsLib.getDocument({ data: buffer }).promise;
+                }
+            }
+        } catch (bufErr) {
+            console.warn('Buffer load failed for:', url, bufErr);
         }
     }
+
+    // 2. Fallback to direct URL loading
+    for (const url of urlsToTry) {
+        if (!url) continue;
+        try {
+            return await pdfjsLib.getDocument({
+                url: url,
+                cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+                cMapPacked: true
+            }).promise;
+        } catch (e1) {
+            try {
+                return await pdfjsLib.getDocument({ url: url }).promise;
+            } catch (e2) {
+                console.warn('URL load failed for:', url, e2);
+            }
+        }
+    }
+
     throw new Error('All PDF load options failed');
 }
 
@@ -968,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.4.1';
+const CURRENT_VERSION = '1.4.2';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
