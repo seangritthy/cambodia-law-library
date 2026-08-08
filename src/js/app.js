@@ -163,30 +163,40 @@ function resumeLastReadBook() {
 async function loadLibrary() {
     initStorage();
     try {
-        const res = await fetch('library.json');
-        allBooks = await res.json();
-        
-        // Auto-assign category & color fallback if not present
-        allBooks.forEach(b => {
-            if (!b.category) {
-                if (b.title.includes('ក្រម')) b.category = 'code';
-                else if (b.title.includes('ព្រះរាជក្រឹត្យ')) b.category = 'royal';
-                else if (b.title.includes('អនុក្រឹត្យ')) b.category = 'sub';
-                else b.category = 'law';
-            }
-            if (!b.color) {
-                if (b.category === 'code') b.color = 'gold';
-                else if (b.category === 'royal') b.color = 'yellow';
-                else if (b.category === 'sub') b.color = 'green';
-                else b.color = 'blue';
-            }
-        });
-
-        renderLibrary();
+        if (window.EMBEDDED_LIBRARY_DATA && Array.isArray(window.EMBEDDED_LIBRARY_DATA) && window.EMBEDDED_LIBRARY_DATA.length > 0) {
+            allBooks = window.EMBEDDED_LIBRARY_DATA;
+        } else {
+            const res = await fetch('library.json');
+            allBooks = await res.json();
+        }
     } catch (e) {
-        libraryGrid.innerHTML = '<p style="color:#ef4444;padding:20px;text-align:center;">មិនអាចផ្ទុកបណ្ណាល័យបានទេ</p>';
-        console.error('Library load error:', e);
+        console.warn('Fetch library.json failed, checking EMBEDDED_LIBRARY_DATA...', e);
+        if (window.EMBEDDED_LIBRARY_DATA && Array.isArray(window.EMBEDDED_LIBRARY_DATA)) {
+            allBooks = window.EMBEDDED_LIBRARY_DATA;
+        } else {
+            libraryGrid.innerHTML = '<p style="color:#ef4444;padding:20px;text-align:center;">មិនអាចផ្ទុកបណ្ណាល័យបានទេ</p>';
+            console.error('Library load error:', e);
+            return;
+        }
     }
+
+    // Auto-assign category & color fallback if not present
+    allBooks.forEach(b => {
+        if (!b.category) {
+            if (b.title.includes('ក្រម')) b.category = 'code';
+            else if (b.title.includes('ព្រះរាជក្រឹត្យ')) b.category = 'royal';
+            else if (b.title.includes('អនុក្រឹត្យ')) b.category = 'sub';
+            else b.category = 'law';
+        }
+        if (!b.color) {
+            if (b.category === 'code') b.color = 'gold';
+            else if (b.category === 'royal') b.color = 'yellow';
+            else if (b.category === 'sub') b.color = 'green';
+            else b.color = 'blue';
+        }
+    });
+
+    renderLibrary();
 }
 
 // === Render Library Grid ===
@@ -1202,7 +1212,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.3.9';
+const CURRENT_VERSION = '3.4.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
