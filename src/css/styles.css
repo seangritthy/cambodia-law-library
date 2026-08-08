@@ -668,23 +668,28 @@ body {
     flex: 1;
 }
 
-.btn-tts-main {
-    background: linear-gradient(135deg, #059669, #10b981);
+.btn-pdf-tool {
     border: none;
     color: white;
-    padding: 12px 14px;
+    padding: 10px 12px;
     border-radius: var(--radius-md);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    flex: 1.5;
-    box-shadow: 0 4px 14px rgba(16,185,129,0.35);
-    transition: transform 0.15s;
+    flex: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 0.15s ease;
 }
-.btn-tts-main:active { transform: scale(0.96); }
-.btn-tts-main.reading {
-    background: linear-gradient(135deg, #dc2626, #ef4444);
-    box-shadow: 0 4px 14px rgba(239,68,68,0.4);
+.btn-pdf-tool:active { transform: scale(0.96); }
+.btn-pdf-tool.btn-image {
+    background: linear-gradient(135deg, #059669, #10b981);
+}
+.btn-pdf-tool.btn-text {
+    background: linear-gradient(135deg, #d97706, #f59e0b);
 }
 
 /* ===== MODAL PAGE JUMP ===== */

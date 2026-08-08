@@ -18,7 +18,7 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.5.1</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.6.0</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -175,23 +175,6 @@
             </div>
         </div>
 
-        <!-- Floating TTS Player Bar -->
-        <div id="tts-player-bar" class="tts-player-bar hidden">
-            <div class="tts-info">
-                <span class="tts-speaker-anim">🔊</span>
-                <span id="tts-status-text" class="tts-status">កំពុងអានអត្ថបទទំព័រ...</span>
-            </div>
-            <div class="tts-controls">
-                <select id="tts-speed-select" class="tts-speed-select" onchange="setTtsSpeed(this.value)">
-                    <option value="0.75">0.75x</option>
-                    <option value="0.85" selected>0.85x</option>
-                    <option value="1.0">1.0x</option>
-                    <option value="1.25">1.25x</option>
-                </select>
-                <button class="btn-tts-stop" onclick="stopReading()">⏹️ ឈប់អាន</button>
-            </div>
-        </div>
-
         <!-- Floating In-Document Search Panel -->
         <div id="doc-search-panel" class="doc-search-panel hidden">
             <div class="doc-search-input-row">
@@ -230,7 +213,8 @@
         <!-- Reader Bottom Navbar -->
         <div class="reader-bottombar">
             <button id="btn-prev" class="btn-nav" onclick="prevPage()">◀ មុន</button>
-            <button id="btn-tts" class="btn-tts-main" onclick="toggleRead()">🔊 អានអត្ថបទ</button>
+            <button class="btn-pdf-tool btn-image" onclick="exportPdfPageToImage()">🖼️ យកជារូបភាព</button>
+            <button class="btn-pdf-tool btn-text" onclick="exportPdfPageToText()">📄 យកជាអត្ថបទ</button>
             <button id="btn-next" class="btn-nav" onclick="nextPage()">បន្ទាប់ ▶</button>
         </div>
     </div>
@@ -341,6 +325,47 @@
                 <button id="btn-download-apk" class="btn-primary btn-download-update" onclick="downloadAndInstallUpdate()">
                     ⬇️ ទាញយកនិងដំឡើង APK
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PDF Page to Image Converter -->
+    <div id="modal-pdf-to-image" class="modal-overlay hidden" onclick="closePdfImageModal(event)">
+        <div class="modal-card modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>🖼️ ទាញយករូបភាពទំព័រ (PDF to Image)</h3>
+                <button class="modal-close-btn" onclick="closePdfImageModal()">✕</button>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <p class="modal-subtext" style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">ទំព័រទី <span id="img-export-page-num">1</span> ត្រូវបានបម្លែងជារូបភាព HD PNG ៖</p>
+                <div style="max-height:420px;overflow:auto;border:1px solid var(--border-color);border-radius:8px;padding:8px;background:var(--bg-secondary);">
+                    <img id="pdf-image-preview" src="" alt="PDF Preview" style="max-width:100%;height:auto;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content:space-between;">
+                <button class="btn-secondary" onclick="closePdfImageModal()">បិទ</button>
+                <button class="btn-primary" onclick="downloadPdfPageImage()">💾 ទាញយករូបភាព (PNG)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PDF Page to Text Extractor -->
+    <div id="modal-pdf-to-text" class="modal-overlay hidden" onclick="closePdfTextModal(event)">
+        <div class="modal-card modal-large" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>📄 ស្រង់អត្ថបទពីទំព័រ (PDF to Text)</h3>
+                <button class="modal-close-btn" onclick="closePdfTextModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-subtext" style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">អត្ថបទដែលបានស្រង់ចេញពីទំព័រទី <span id="txt-export-page-num">1</span> ៖</p>
+                <textarea id="pdf-text-extracted-area" readonly style="width:100%;height:280px;padding:12px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-family:'Kantumruy Pro',sans-serif;font-size:14px;line-height:1.6;resize:vertical;"></textarea>
+            </div>
+            <div class="modal-footer" style="justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                <button class="btn-secondary" onclick="closePdfTextModal()">បិទ</button>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-secondary" onclick="copyExtractedText()">📋 ចម្លងអត្ថបទ</button>
+                    <button class="btn-primary" onclick="downloadExtractedTextFile()">💾 ទាញយក .txt</button>
+                </div>
             </div>
         </div>
     </div>

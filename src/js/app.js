@@ -1054,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.5.1';
+const CURRENT_VERSION = '1.6.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1568,6 +1568,122 @@ function openCurrentBookInNativeViewer() {
         window.open(url, '_blank');
         showToast('កំពុងបើកឯកសារ PDF ក្នុងផ្ទាំងថ្មី 🌐');
     }
+}
+
+// === EXPORT PDF PAGE TO IMAGE (PNG) ===
+let currentExportImageCanvas = null;
+
+async function exportPdfPageToImage() {
+    if (!pdfDoc) return;
+    try {
+        showToast(`កំពុងបម្លែងទំព័រទី ${currentPage} ជារូបភាព... 🖼️`);
+        const page = await pdfDoc.getPage(currentPage);
+        const viewport = page.getViewport({ scale: 2.0 });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        currentExportImageCanvas = canvas;
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const imgPreview = document.getElementById('pdf-image-preview');
+        const pageLabel = document.getElementById('img-export-page-num');
+
+        if (imgPreview) imgPreview.src = dataUrl;
+        if (pageLabel) pageLabel.textContent = currentPage;
+
+        document.getElementById('modal-pdf-to-image').classList.remove('hidden');
+    } catch(err) {
+        console.error('PDF to Image error:', err);
+        showToast('មិនអាចបម្លែងទំព័រជារូបភាពបានទេ');
+    }
+}
+
+function downloadPdfPageImage() {
+    if (!currentExportImageCanvas) return;
+    const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
+    const filename = `${bookTitle}_Page_${currentPage}.png`;
+
+    const dataUrl = currentExportImageCanvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    showToast(`បានទាញយករូបភាព ${filename} 💾`);
+}
+
+function closePdfImageModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('modal-pdf-to-image').classList.add('hidden');
+}
+
+// === EXPORT PDF PAGE TO TEXT (.txt & Copy) ===
+let currentExtractedText = '';
+
+async function exportPdfPageToText() {
+    if (!pdfDoc) return;
+    try {
+        showToast(`កំពុងស្រង់អត្ថបទពីទំព័រទី ${currentPage}... 📄`);
+        const page = await pdfDoc.getPage(currentPage);
+        const textContent = await page.getTextContent();
+        const text = textContent.items.map(item => item.str).join(' ').trim();
+
+        currentExtractedText = text || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+
+        const txtArea = document.getElementById('pdf-text-extracted-area');
+        const pageLabel = document.getElementById('txt-export-page-num');
+
+        if (txtArea) txtArea.value = currentExtractedText;
+        if (pageLabel) pageLabel.textContent = currentPage;
+
+        document.getElementById('modal-pdf-to-text').classList.remove('hidden');
+    } catch(err) {
+        console.error('PDF to Text error:', err);
+        showToast('មិនអាចស្រង់អត្ថបទពីទំព័រនេះបានទេ');
+    }
+}
+
+function copyExtractedText() {
+    if (!currentExtractedText) return;
+    navigator.clipboard.writeText(currentExtractedText).then(() => {
+        showToast('បានចម្លងអត្ថបទចូល Clipboard រួចរាល់! 📋');
+    }).catch(() => {
+        const txtArea = document.getElementById('pdf-text-extracted-area');
+        if (txtArea) {
+            txtArea.select();
+            document.execCommand('copy');
+            showToast('បានចម្លងអត្ថបទចូល Clipboard! 📋');
+        }
+    });
+}
+
+function downloadExtractedTextFile() {
+    if (!currentExtractedText) return;
+    const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
+    const filename = `${bookTitle}_Page_${currentPage}.txt`;
+
+    const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(`បានទាញយកឯកសារ ${filename} 💾`);
+}
+
+function closePdfTextModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('modal-pdf-to-text').classList.add('hidden');
 }
 
 
