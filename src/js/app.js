@@ -98,7 +98,7 @@ async function loadLibrary() {
 
         renderLibrary();
     } catch (e) {
-        libraryGrid.innerHTML = '<p style="color:#ef4444;padding:20px;text-align:center;">មិនអាចផ្ទុកបណ្ណាល័យបានទេ (Failed to load library)</p>';
+        libraryGrid.innerHTML = '<p style="color:#ef4444;padding:20px;text-align:center;">មិនអាចផ្ទុកបណ្ណាល័យបានទេ</p>';
         console.error('Library load error:', e);
     }
 }
@@ -303,7 +303,7 @@ async function openBook(book) {
                 <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
                 <h3 style="color:#ef4444;margin-bottom:8px;">មិនអាចបើកឯកសារ PDF បានទេ</h3>
                 <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">ឯកសារនេះត្រូវការការតភ្ជាប់អ៊ីនធឺណិត ឬមិនទាន់មានក្នុងប្រព័ន្ធ</p>
-                <button class="btn-primary" onclick="openBook(currentBook)" style="padding:8px 20px;border-radius:20px;cursor:pointer;">🔄 ព្យាយាមម្តងទៀត (Retry)</button>
+                <button class="btn-primary" onclick="openBook(currentBook)" style="padding:8px 20px;border-radius:20px;cursor:pointer;">🔄 ព្យាយាមម្តងទៀត</button>
             </div>
         `;
         console.error('PDF load error:', err);
@@ -314,7 +314,7 @@ async function openBook(book) {
 function toggleReaderMode() {
     viewMode = (viewMode === 'scroll') ? 'flip' : 'scroll';
     btnModeToggle.textContent = (viewMode === 'scroll') ? '📜' : '📖';
-    showToast((viewMode === 'scroll') ? 'របៀបរមូរ (Scroll View)' : 'របៀបប្រលេចទំព័រ (Page Flip View)');
+    showToast((viewMode === 'scroll') ? 'របៀបរមូរ' : 'របៀបប្រលេចទំព័រ');
     renderCurrentViewMode();
 }
 
@@ -771,7 +771,7 @@ async function checkForUpdates(manual = false) {
             document.getElementById('update-banner').classList.remove('hidden');
             if (manual) openUpdateModal();
         } else {
-            if (manual) showToast('កម្មវិធីរបស់អ្នកជាជំនាន់ចុងក្រោយបង្អស់ហើយ! (Up to date)');
+            if (manual) showToast('កម្មវិធីរបស់អ្នកជាជំនាន់ចុងក្រោយបង្អស់ហើយ!');
         }
     } catch(e) {
         console.error('Update check error:', e);
@@ -825,7 +825,7 @@ function downloadAndInstallUpdate() {
     
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '⏳ កំពុងទាញយក... (Downloading...)';
+        btn.innerHTML = '⏳ កំពុងទាញយក...';
     }
     if (progressContainer) {
         progressContainer.classList.remove('hidden');
@@ -850,18 +850,18 @@ function downloadAndInstallUpdate() {
             }
 
             if (percent >= 100 && statusEl) {
-                statusEl.textContent = 'ទាញយកបានសម្រេច! កំពុងបើកកម្មវិធីដំឡើង... (Completed!)';
+                statusEl.textContent = 'ទាញយកបានសម្រេច! កំពុងបើកកម្មវិធីដំឡើង...';
             }
         });
 
         AppUpdater.downloadAndInstall({ url: apkUrl }).then(() => {
-            showToast('កំពុងបើកកម្មវិធីដំឡើង... (Launching Installer)');
+            showToast('កំពុងបើកកម្មវិធីដំឡើង...');
         }).catch(err => {
             console.error('In-app update error:', err);
             showToast('មានបញ្ហាក្នុងការទាញយក APK');
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = '⬇️ ទាញយកតាម Browser';
+                btn.innerHTML = '⬇️ ទាញយកតាមកម្មវិធីរុករក';
                 btn.onclick = () => window.open(apkUrl, '_system');
             }
         });

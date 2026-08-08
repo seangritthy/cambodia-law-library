@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>បណ្ណាល័យច្បាប់កម្ពុជា - Cambodia Law Library</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Moul&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>បណ្ណាល័យច្បាប់កម្ពុជា</title>
+    <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="theme-dark">
@@ -18,14 +18,14 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">Cambodia Law Library <span id="app-version-badge" class="version-badge">v1.2.4</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.2.4</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button id="btn-check-update" class="icon-btn" title="ពិនិត្យមើលអាប់ដេត (Check Updates)" onclick="checkForUpdates(true)">
+                    <button id="btn-check-update" class="icon-btn" title="ពិនិត្យមើលអាប់ដេត" onclick="checkForUpdates(true)">
                         <span>🔄</span>
                     </button>
-                    <button id="btn-theme-toggle" class="icon-btn" title="ប្តូរប្រធានបទ (Switch Theme)" onclick="toggleTheme()">
+                    <button id="btn-theme-toggle" class="icon-btn" title="ប្តូរប្រធានបទ" onclick="toggleTheme()">
                         <span id="theme-icon">🌙</span>
                     </button>
                 </div>
@@ -40,7 +40,7 @@
                         <p>សូមអាប់ដេតកម្មវិធីដើម្បីទទួលបានលក្ខណៈពិសេសថ្មីៗ</p>
                     </div>
                 </div>
-                <button class="btn-update-now" onclick="openUpdateModal()">អាប់ដេត (Update)</button>
+                <button class="btn-update-now" onclick="openUpdateModal()">អាប់ដេត</button>
             </div>
 
             <!-- Search & Filter Controls -->
@@ -83,8 +83,8 @@
     <div id="screen-reader" class="hidden">
         <!-- Top Reader Navbar -->
         <div class="reader-topbar">
-            <button id="btn-reader-back" class="nav-icon-btn" onclick="closeBook()" title="ត្រឡប់ក្រោយ (Home)">
-                🏠 <span>ផ្ទះ</span>
+            <button id="btn-reader-back" class="nav-icon-btn" onclick="closeBook()" title="ត្រឡប់ក្រោយ">
+                🏠 <span>ដើម</span>
             </button>
             
             <div id="book-title-bar" class="reader-title">...</div>
@@ -93,7 +93,7 @@
                 <button id="btn-reader-fav" class="icon-btn-sm" onclick="toggleCurrentBookFavorite()" title="រក្សាទុកក្នុងបញ្ជីចូលចិត្ត">
                     🤍
                 </button>
-                <button id="btn-mode-toggle" class="icon-btn-sm" onclick="toggleReaderMode()" title="ប្តូររបៀបមើល (Scroll / Page Flip)">
+                <button id="btn-mode-toggle" class="icon-btn-sm" onclick="toggleReaderMode()" title="ប្តូររបៀបមើល">
                     📜
                 </button>
                 <button id="page-indicator" class="page-badge-btn" onclick="openPageJumpModal()" title="រំលងទៅទំព័រ">
@@ -105,14 +105,14 @@
         <!-- Secondary Toolbar: Zoom & Reading Theme -->
         <div class="reader-subbar">
             <div class="subbar-group">
-                <button class="sub-btn" onclick="zoomOut()" title="បង្រួម (Zoom Out)">➖</button>
+                <button class="sub-btn" onclick="zoomOut()" title="បង្រួម">➖</button>
                 <span id="zoom-level-text" class="subbar-label">100%</span>
-                <button class="sub-btn" onclick="zoomIn()" title="ពង្រីក (Zoom In)">➕</button>
+                <button class="sub-btn" onclick="zoomIn()" title="ពង្រីក">➕</button>
                 <button class="sub-btn" onclick="resetZoom()" title="ទំហំដើម">🔄</button>
             </div>
             
             <div class="subbar-group">
-                <button id="btn-reader-theme" class="sub-btn theme-pill" onclick="cycleReaderFilter()" title="ពណ៌ទំព័រ (Theme Filter)">
+                <button id="btn-reader-theme" class="sub-btn theme-pill" onclick="cycleReaderFilter()" title="ពណ៌ទំព័រ">
                     <span>🎨</span> <span id="reader-filter-label">ធម្មតា</span>
                 </button>
             </div>
@@ -146,7 +146,7 @@
     <div id="modal-page-jump" class="modal-overlay hidden" onclick="closePageJumpModal(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <h3>រំលងទៅទំព័រ (Jump to Page)</h3>
+                <h3>រំលងទៅទំព័រ</h3>
                 <button class="modal-close-btn" onclick="closePageJumpModal()">✕</button>
             </div>
             <div class="modal-body">
@@ -170,7 +170,7 @@
                 <div class="update-title-group">
                     <span class="update-hero-icon">🚀</span>
                     <div>
-                        <h3>អាប់ដេតកម្មវិធី (App Update)</h3>
+                        <h3>អាប់ដេតកម្មវិធី</h3>
                         <p class="sub-text">ជំនាន់ថ្មី <span id="modal-update-tag" class="tag-badge">v1.2.5</span></p>
                     </div>
                 </div>
@@ -184,7 +184,7 @@
                 <!-- Download Progress Bar Container (Hidden by default) -->
                 <div id="update-progress-container" class="update-progress-container hidden">
                     <div class="progress-status-row">
-                        <span id="update-progress-status">កំពុងទាញយក APK (Downloading)...</span>
+                        <span id="update-progress-status">កំពុងទាញយក APK...</span>
                         <span id="update-progress-percent">0%</span>
                     </div>
                     <div class="progress-bar-track">
@@ -194,7 +194,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeUpdateModal()">ទុកពេលក្រោយ (Later)</button>
+                <button class="btn-cancel" onclick="closeUpdateModal()">ទុកពេលក្រោយ</button>
                 <button id="btn-download-apk" class="btn-primary btn-download-update" onclick="downloadAndInstallUpdate()">
                     ⬇️ ទាញយកនិងដំឡើង APK
                 </button>

@@ -63,7 +63,7 @@ body.reader-filter-dark #pageflip-wrapper canvas {
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body {
-    font-family: 'Kantumruy Pro', 'Outfit', sans-serif;
+    font-family: 'Battambang', system-ui, -apple-system, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     height: 100vh;
@@ -118,9 +118,9 @@ body {
 }
 
 .lib-header h1 {
-    font-family: 'Moul', serif;
+    font-family: 'Battambang', system-ui, -apple-system, sans-serif;
     font-size: 17px;
-    font-weight: 400;
+    font-weight: 700;
     color: var(--text-primary);
     line-height: 1.2;
 }
@@ -387,9 +387,9 @@ body {
 }
 
 .book-title-gold {
-    font-family: 'Moul', serif;
+    font-family: 'Battambang', system-ui, -apple-system, sans-serif;
     font-size: 12px;
-    font-weight: 400;
+    font-weight: 700;
     text-align: center;
     line-height: 1.5;
     overflow: hidden;
@@ -404,7 +404,7 @@ body {
 }
 
 .book-bottom-stripe {
-    font-family: 'Moul', serif;
+    font-family: 'Battambang', system-ui, -apple-system, sans-serif;
     position: absolute;
     bottom: 12px;
     width: 85%;
