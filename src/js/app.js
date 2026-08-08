@@ -378,24 +378,7 @@ async function openBook(book) {
             pageFlipInstance = null;
         }
 
-        try {
-            pdfDoc = await pdfjsLib.getDocument({
-                url: primaryUrl,
-                cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-                cMapPacked: true
-            }).promise;
-        } catch(primaryErr) {
-            console.warn('Primary PDF load failed, trying fallback:', primaryUrl, primaryErr);
-            if (fallbackUrl && fallbackUrl !== primaryUrl) {
-                pdfDoc = await pdfjsLib.getDocument({
-                    url: fallbackUrl,
-                    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-                    cMapPacked: true
-                }).promise;
-            } else {
-                throw primaryErr;
-            }
-        }
+        pdfDoc = await getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl);
 
         totalPages = pdfDoc.numPages;
         if (currentPage > totalPages) currentPage = 1;
@@ -425,6 +408,28 @@ async function openBook(book) {
     }
 }
 
+// === Robust PDF Document Loader ===
+async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl) {
+    const attempts = [
+        { url: primaryUrl, cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/', cMapPacked: true },
+        { url: primaryUrl },
+    ];
+    if (fallbackUrl && fallbackUrl !== primaryUrl) {
+        attempts.push({ url: fallbackUrl, cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/', cMapPacked: true });
+        attempts.push({ url: fallbackUrl });
+    }
+    for (const opt of attempts) {
+        try {
+            const task = pdfjsLib.getDocument(opt);
+            const doc = await task.promise;
+            if (doc) return doc;
+        } catch(e) {
+            console.warn('PDF load attempt failed:', opt.url, e);
+        }
+    }
+    throw new Error('All PDF load options failed');
+}
+
 // === View Mode Controller (Scroll vs PageFlip) ===
 function toggleReaderMode() {
     viewMode = (viewMode === 'scroll') ? 'flip' : 'scroll';
@@ -445,35 +450,56 @@ function renderCurrentViewMode() {
     }
 }
 
-// === SCROLL VIEW IMPLEMENTATION ===
+// === SMART VIRTUALIZED SCROLL VIEW ===
+let renderingPages = new Set();
+
 async function initScrollView() {
     pdfPagesWrapper.innerHTML = '';
     pdfScrollContainer.removeEventListener('scroll', onScroll);
+    renderingPages.clear();
 
-    // Render first 3 pages near target page
-    const startP = Math.max(1, currentPage - 1);
-    const endP = Math.min(totalPages, currentPage + 2);
-
-    for (let i = startP; i <= endP; i++) {
-        await renderScrollPage(i);
+    // Create lightweight placeholder elements for all pages
+    for (let i = 1; i <= totalPages; i++) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pdf-page-wrapper';
+        wrapper.id = `page-wrapper-${i}`;
+        wrapper.style.minHeight = '700px';
+        pdfPagesWrapper.appendChild(wrapper);
     }
+
+    // Initial render of visible pages near target page
+    await updateVisiblePages();
 
     // Scroll to target page
     scrollToPage(currentPage);
 
-    // Render remaining pages in background
-    for (let i = 1; i <= totalPages; i++) {
-        if (i < startP || i > endP) {
-            renderScrollPage(i);
-        }
-    }
-
     pdfScrollContainer.addEventListener('scroll', onScroll);
 }
 
-async function renderScrollPage(pageNum) {
-    if (document.getElementById(`page-wrapper-${pageNum}`)) return;
+async function updateVisiblePages() {
+    if (!pdfDoc || viewMode !== 'scroll') return;
 
+    const startP = Math.max(1, currentPage - 2);
+    const endP = Math.min(totalPages, currentPage + 2);
+
+    // Render active pages
+    for (let i = startP; i <= endP; i++) {
+        renderScrollPageCanvas(i);
+    }
+
+    // Unrender distant pages to keep memory light
+    for (let i = 1; i <= totalPages; i++) {
+        if (i < currentPage - 5 || i > currentPage + 5) {
+            unrenderScrollPageCanvas(i);
+        }
+    }
+}
+
+async function renderScrollPageCanvas(pageNum) {
+    const wrapper = document.getElementById(`page-wrapper-${pageNum}`);
+    if (!wrapper || wrapper.querySelector('canvas') || renderingPages.has(pageNum)) return;
+
+    renderingPages.add(pageNum);
     try {
         const page = await pdfDoc.getPage(pageNum);
         const rawWidth = pdfScrollContainer.clientWidth;
@@ -484,10 +510,6 @@ async function renderScrollPage(pageNum) {
         const scale = (containerWidth / viewport.width) * devicePixelRatio * zoomLevel;
         const scaledViewport = page.getViewport({ scale });
 
-        const wrapper = document.createElement('div');
-        wrapper.className = 'pdf-page-wrapper';
-        wrapper.id = `page-wrapper-${pageNum}`;
-
         const canvas = document.createElement('canvas');
         canvas.width = scaledViewport.width;
         canvas.height = scaledViewport.height;
@@ -495,31 +517,34 @@ async function renderScrollPage(pageNum) {
         canvas.style.height = (scaledViewport.height / devicePixelRatio) + 'px';
         canvas.id = `canvas-${pageNum}`;
 
+        wrapper.style.minHeight = (scaledViewport.height / devicePixelRatio) + 'px';
         wrapper.appendChild(canvas);
-
-        // Maintain ascending order
-        let inserted = false;
-        const existing = pdfPagesWrapper.children;
-        for (let el of existing) {
-            const pId = parseInt(el.id.replace('page-wrapper-', ''), 10);
-            if (pageNum < pId) {
-                pdfPagesWrapper.insertBefore(wrapper, el);
-                inserted = true;
-                break;
-            }
-        }
-        if (!inserted) pdfPagesWrapper.appendChild(wrapper);
 
         const ctx = canvas.getContext('2d');
         await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
     } catch (err) {
-        console.error(`Error rendering page ${pageNum}:`, err);
+        console.error(`Error rendering page canvas ${pageNum}:`, err);
+    } finally {
+        renderingPages.delete(pageNum);
     }
 }
 
-// === PAGEFLIP VIEW IMPLEMENTATION ===
+function unrenderScrollPageCanvas(pageNum) {
+    const wrapper = document.getElementById(`page-wrapper-${pageNum}`);
+    if (wrapper) {
+        const canvas = wrapper.querySelector('canvas');
+        if (canvas) {
+            canvas.width = 0;
+            canvas.height = 0;
+            canvas.remove();
+        }
+    }
+}
+
+// === SMART VIRTUALIZED PAGEFLIP VIEW ===
 async function initPageFlipView() {
     pageflipWrapper.innerHTML = '';
+    renderingPages.clear();
     if (pageFlipInstance) {
         try { pageFlipInstance.destroy(); } catch(e) {}
         pageFlipInstance = null;
@@ -564,15 +589,14 @@ async function initPageFlipView() {
 
     pageFlipInstance.loadFromHTML(pageElements);
 
-    // Render pages
-    for (let i = 1; i <= totalPages; i++) {
-        renderFlipPageCanvas(i);
-    }
+    // Render active adjacent pages only
+    renderFlipActiveWindow(currentPage);
 
     pageFlipInstance.on('flip', (e) => {
         currentPage = e.data + 1;
         pageIndicator.textContent = `${currentPage} / ${totalPages}`;
         saveBookLastPage(currentBook ? currentBook.id : null, currentPage);
+        renderFlipActiveWindow(currentPage);
         if (isReading) stopReading();
     });
 
@@ -583,10 +607,19 @@ async function initPageFlipView() {
     }
 }
 
+function renderFlipActiveWindow(pageP) {
+    const startP = Math.max(1, pageP - 1);
+    const endP = Math.min(totalPages, pageP + 2);
+    for (let i = startP; i <= endP; i++) {
+        renderFlipPageCanvas(i);
+    }
+}
+
 async function renderFlipPageCanvas(pageNum) {
     const canvas = document.getElementById(`flip-canvas-${pageNum}`);
-    if (!canvas) return;
+    if (!canvas || canvas.width > 0 || renderingPages.has(pageNum)) return;
 
+    renderingPages.add(pageNum);
     try {
         const page = await pdfDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale: 1.5 * zoomLevel });
@@ -597,6 +630,8 @@ async function renderFlipPageCanvas(pageNum) {
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
     } catch(e) {
         console.error(`Error rendering flip canvas ${pageNum}:`, e);
+    } finally {
+        renderingPages.delete(pageNum);
     }
 }
 
@@ -621,6 +656,7 @@ function onScroll() {
         saveBookLastPage(currentBook ? currentBook.id : null, currentPage);
         updateReadingProgressBar();
         updateBookmarkButton();
+        updateVisiblePages();
         if (isReading) stopReading();
     }
 }
@@ -646,8 +682,10 @@ function jumpToPage(pageNum) {
     updateBookmarkButton();
 
     if (viewMode === 'scroll') {
+        updateVisiblePages();
         scrollToPage(currentPage);
     } else if (pageFlipInstance) {
+        renderFlipActiveWindow(currentPage);
         try { pageFlipInstance.turnToPage(currentPage - 1); } catch(e) {}
     }
 }
