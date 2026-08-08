@@ -946,24 +946,31 @@ async function toggleRead() {
 
             const voices = window.speechSynthesis.getVoices();
             const khmerVoice = voices.find(v => v.lang.startsWith('km') || v.lang.startsWith('kh'));
-            if (khmerVoice) utterance.voice = khmerVoice;
-            
-            utterance.lang = 'km-KH';
-            utterance.rate = ttsSpeed;
 
-            utterance.onend = () => stopReading();
-            utterance.onerror = (e) => {
-                console.error('Speech error:', e);
-                playGoogleTTS(text);
-            };
+            if (khmerVoice) {
+                utterance.voice = khmerVoice;
+                utterance.lang = 'km-KH';
+                utterance.rate = ttsSpeed;
 
-            window.speechSynthesis.speak(utterance);
-
-            setTimeout(() => {
-                if (isReading && !window.speechSynthesis.speaking) {
+                utterance.onend = () => stopReading();
+                utterance.onerror = (e) => {
+                    console.error('Speech error:', e);
                     playGoogleTTS(text);
-                }
-            }, 2000);
+                };
+
+                window.speechSynthesis.speak(utterance);
+
+                setTimeout(() => {
+                    if (isReading && !window.speechSynthesis.speaking) {
+                        playGoogleTTS(text);
+                    }
+                }, 2000);
+
+            } else {
+                // If phone doesn't have native Khmer TTS voice pack, use Google Khmer TTS Online Audio
+                showToast('ទូរស័ព្ទមិនទាន់មាន Voice Pack ខ្មែរទេ! កំពុងប្រើប្រាស់សំឡេង Google Online 🔊');
+                playGoogleTTS(text);
+            }
 
         } else {
             playGoogleTTS(text);
@@ -1028,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.4.2';
+const CURRENT_VERSION = '1.4.3';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
