@@ -1202,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.3.8';
+const CURRENT_VERSION = '3.3.9';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1581,6 +1581,36 @@ function toggleDocSearchPanel() {
     }
 }
 
+function buildSmartKhmerSearchRegex(query) {
+    if (!query) return null;
+    const khmerDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    const arabicDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    let regexPattern = '';
+    const cleanQuery = query.trim();
+
+    for (let i = 0; i < cleanQuery.length; i++) {
+        const char = cleanQuery[i];
+        const khmIdx = khmerDigits.indexOf(char);
+        const arbIdx = arabicDigits.indexOf(char);
+
+        if (khmIdx !== -1) {
+            regexPattern += `[${khmerDigits[khmIdx]}${arabicDigits[khmIdx]}]`;
+        } else if (arbIdx !== -1) {
+            regexPattern += `[${khmerDigits[arbIdx]}${arabicDigits[arbIdx]}]`;
+        } else if (char === ' ') {
+            regexPattern += '\\s*';
+        } else {
+            regexPattern += escapeRegExp(char);
+        }
+    }
+
+    // Allow optional spaces after មាត្រា
+    regexPattern = regexPattern.replace(/មាត្រា/g, 'មាត្រា\\s*');
+
+    return new RegExp(`(${regexPattern})`, 'gi');
+}
+
 async function executeDocSearch() {
     const input = document.getElementById('doc-search-input');
     const query = input ? input.value.trim() : '';
@@ -1598,9 +1628,9 @@ async function executeDocSearch() {
     if (controls) controls.classList.remove('hidden');
     if (resultsList) resultsList.innerHTML = '';
 
-    showToast(`កំពុងស្វែងរកពាក្យ "${query}" ក្នុងឯកសារ...`);
+    showToast(`កំពុងស្វែងរកពាក្យ "${query}" ក្នុងឯកសារ... 🔍`);
 
-    const qLower = query.toLowerCase();
+    const smartRegex = buildSmartKhmerSearchRegex(query);
 
     for (let p = 1; p <= totalPages; p++) {
         try {
@@ -1608,22 +1638,29 @@ async function executeDocSearch() {
             const content = await page.getTextContent();
             const pageText = content.items.map(i => i.str).join(' ');
             
-            let idx = pageText.toLowerCase().indexOf(qLower);
-            while (idx !== -1) {
-                const startSnippet = Math.max(0, idx - 25);
-                const endSnippet = Math.min(pageText.length, idx + query.length + 35);
-                const rawSnippet = pageText.substring(startSnippet, endSnippet);
+            let match;
+            smartRegex.lastIndex = 0;
 
-                const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
-                const highlightedSnippet = rawSnippet.replace(regex, '<mark>$1</mark>');
+            while ((match = smartRegex.exec(pageText)) !== null) {
+                const idx = match.index;
+                const matchStr = match[0];
+                const startSnippet = Math.max(0, idx - 25);
+                const endSnippet = Math.min(pageText.length, idx + matchStr.length + 35);
+                let rawSnippet = pageText.substring(startSnippet, endSnippet);
+
+                const snippetRegex = buildSmartKhmerSearchRegex(query);
+                const highlightedSnippet = rawSnippet.replace(snippetRegex, '<mark class="highlight-search-word">$1</mark>');
 
                 searchMatches.push({
                     pageNum: p,
                     snippet: '...' + highlightedSnippet + '...',
+                    matchedText: matchStr,
                     matchIndex: searchMatches.length
                 });
 
-                idx = pageText.toLowerCase().indexOf(qLower, idx + query.length);
+                if (match.index === smartRegex.lastIndex) {
+                    smartRegex.lastIndex++;
+                }
             }
         } catch(e) {}
     }
@@ -1632,7 +1669,7 @@ async function executeDocSearch() {
         currentMatchIndex = 0;
         updateSearchMatchesUI();
         jumpToSearchMatch(0);
-        showToast(`រកឃើញ ${searchMatches.length} ផល!`);
+        showToast(`រកឃើញ "${query}" ${searchMatches.length} កន្លែង! ✨`);
     } else {
         if (countBadge) countBadge.textContent = 'រកមិនឃើញផល';
         showToast(`រកមិនឃើញពាក្យ "${query}" ក្នុងឯកសារនេះទេ`);
@@ -2020,12 +2057,35 @@ async function getOrOcrPageText(page, pageNumber) {
     }
 
     return rawText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+function renderExtractedTextWithHighlight(text) {
+    const displayDiv = document.getElementById('pdf-text-highlighted-display');
+    const txtArea = document.getElementById('pdf-text-extracted-area');
+    if (txtArea) txtArea.value = text || '';
+    if (!displayDiv) return;
+
+    if (!text) {
+        displayDiv.innerHTML = 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ';
+        return;
+    }
+
+    let safeText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    if (docSearchQuery) {
+        const regex = buildSmartKhmerSearchRegex(docSearchQuery);
+        if (regex) {
+            safeText = safeText.replace(regex, '<mark class="highlight-search-word">$1</mark>');
+        }
+    } else {
+        // Highlight all Article titles (e.g. មាត្រា ៥, មាត្រា១២, មាត្រា 10) in glowing yellow gold!
+        safeText = safeText.replace(/(មាត្រា\s*[០-៩0-9]+)/gi, '<mark class="highlight-search-word">$1</mark>');
+    }
+
+    displayDiv.innerHTML = safeText;
 }
 
 async function runKhmerOcrOnCurrentPage() {
     if (!pdfDoc) return;
     const btn = document.getElementById('btn-ocr-trigger');
-    const txtArea = document.getElementById('pdf-text-extracted-area');
     if (btn) btn.disabled = true;
 
     try {
@@ -2033,8 +2093,8 @@ async function runKhmerOcrOnCurrentPage() {
         const page = await pdfDoc.getPage(currentPage);
         const ocrText = await ocrKhmerPdfPage(page, currentPage);
 
-        if (txtArea) txtArea.value = ocrText || 'មិនអាចស្កេនអត្ថបទខ្មែរចេញពីរូបភាពទំព័រនេះបានទេ';
-        currentExtractedText = ocrText;
+        currentExtractedText = ocrText || 'មិនអាចស្កេនអត្ថបទខ្មែរចេញពីរូបភាពទំព័រនេះបានទេ';
+        renderExtractedTextWithHighlight(currentExtractedText);
 
         const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
         const filename = `${bookTitle}_Page_${currentPage}.txt`;
@@ -2061,11 +2121,9 @@ async function exportPdfPageToText() {
         const page = await pdfDoc.getPage(currentPage);
 
         currentExtractedText = await getOrOcrPageText(page, currentPage);
+        renderExtractedTextWithHighlight(currentExtractedText);
 
-        const txtArea = document.getElementById('pdf-text-extracted-area');
         const pageLabel = document.getElementById('txt-export-page-num');
-
-        if (txtArea) txtArea.value = currentExtractedText;
         if (pageLabel) pageLabel.textContent = `${currentPage} / ${totalPages}`;
 
         const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';

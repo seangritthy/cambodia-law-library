@@ -18,7 +18,7 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v3.3.8</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v3.3.9</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -367,7 +367,8 @@
             </div>
             <div class="modal-body">
                 <p class="modal-subtext" style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">អត្ថបទដែលបានស្រង់ចេញពីទំព័រទី <span id="txt-export-page-num">1</span> ៖</p>
-                <textarea id="pdf-text-extracted-area" readonly style="width:100%;height:280px;padding:12px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-family:'Kantumruy Pro',sans-serif;font-size:14px;line-height:1.6;resize:vertical;"></textarea>
+                <div id="pdf-text-highlighted-display" class="pdf-text-highlighted-display"></div>
+                <textarea id="pdf-text-extracted-area" readonly style="display:none;"></textarea>
             </div>
             <div class="modal-footer" style="justify-content:space-between;gap:8px;flex-wrap:wrap;">
                 <button class="btn-secondary" onclick="closePdfTextModal()">បិទ</button>
