@@ -1059,7 +1059,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.0.1';
+const CURRENT_VERSION = '2.1.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1630,18 +1630,99 @@ function closePdfImageModal(e) {
     document.getElementById('modal-pdf-to-image').classList.add('hidden');
 }
 
-// === EXPORT PDF PAGE TO TEXT (.txt & Copy) ===
+// === EXPORT PDF PAGE TO TEXT (.txt & Copy & Khmer OCR) ===
 let currentExtractedText = '';
+const ocrTextCache = {};
+
+async function ocrKhmerPdfPage(page, pageNumber) {
+    const cacheKey = `${currentBook ? currentBook.id : 'doc'}_p${pageNumber}`;
+    if (ocrTextCache[cacheKey]) {
+        return ocrTextCache[cacheKey];
+    }
+
+    const viewport = page.getViewport({ scale: 2.0 });
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    await page.render({
+        canvasContext: context,
+        viewport: viewport
+    }).promise;
+
+    if (typeof Tesseract === 'undefined' || typeof Tesseract.recognize !== 'function') {
+        throw new Error('Tesseract OCR engine is not loaded');
+    }
+
+    const result = await Tesseract.recognize(canvas, 'khm', {
+        logger: m => {
+            if (m && m.status === 'recognizing text') {
+                const pct = Math.round((m.progress || 0) * 100);
+                showToast(`កំពុងស្កេនរូបភាព (OCR)... ${pct}% 🔍`);
+            }
+        }
+    });
+
+    const ocrText = (result && result.data && result.data.text) ? result.data.text.trim() : '';
+    if (ocrText) {
+        ocrTextCache[cacheKey] = ocrText;
+    }
+    return ocrText;
+}
+
+async function extractPageTextWithFallback(page, pageNumber) {
+    const textContent = await page.getTextContent();
+    const rawText = textContent.items.map(item => item.str).join(' ').trim();
+
+    if (rawText && rawText.length > 20) {
+        return convertPdfTextToUnicode(rawText);
+    }
+
+    const cacheKey = `${currentBook ? currentBook.id : 'doc'}_p${pageNumber}`;
+    if (ocrTextCache[cacheKey]) {
+        return ocrTextCache[cacheKey];
+    }
+
+    console.log(`Running Khmer OCR fallback on page ${pageNumber}...`);
+    try {
+        const ocrText = await ocrKhmerPdfPage(page, pageNumber);
+        return ocrText || (rawText ? convertPdfTextToUnicode(rawText) : 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។');
+    } catch(err) {
+        console.warn('OCR Fallback error:', err);
+        return rawText ? convertPdfTextToUnicode(rawText) : 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ។';
+    }
+}
+
+async function runKhmerOcrOnCurrentPage() {
+    if (!pdfDoc) return;
+    const btn = document.getElementById('btn-ocr-trigger');
+    const txtArea = document.getElementById('pdf-text-extracted-area');
+    if (btn) btn.disabled = true;
+
+    try {
+        showToast(`កំពុងស្កេនរូបភាពទំព័រទី ${currentPage} ជាមួយ Khmer OCR... 🔍`);
+        const page = await pdfDoc.getPage(currentPage);
+        const ocrText = await ocrKhmerPdfPage(page, currentPage);
+
+        if (txtArea) txtArea.value = ocrText || 'មិនអាចស្កេនអត្ថបទខ្មែរចេញពីរូបភាពនេះបានទេ';
+        currentExtractedText = ocrText;
+        showToast('បានស្កេនអត្ថបទខ្មែរ (OCR) រួចរាល់! 🔍');
+    } catch(err) {
+        console.error('Manual OCR error:', err);
+        showToast('មិនអាចដំណើរការ Khmer OCR បានទេ (សូមពិនិត្យអ៊ីនធឺណិត ឬម៉ូដែល OCR)');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
 
 async function exportPdfPageToText() {
     if (!pdfDoc) return;
     try {
         showToast(`កំពុងស្រង់អត្ថបទពីទំព័រទី ${currentPage}... 📄`);
         const page = await pdfDoc.getPage(currentPage);
-        const textContent = await page.getTextContent();
 
-        const rawText = textContent.items.map(item => item.str).join(' ').trim();
-        currentExtractedText = rawText ? convertPdfTextToUnicode(rawText) : 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        currentExtractedText = await extractPageTextWithFallback(page, currentPage);
 
         const txtArea = document.getElementById('pdf-text-extracted-area');
         const pageLabel = document.getElementById('txt-export-page-num');
