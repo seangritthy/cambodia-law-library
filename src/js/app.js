@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.6.4';
+const CURRENT_VERSION = '1.6.5';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1628,11 +1628,11 @@ function closePdfImageModal(e) {
 }
 
 // === KHMER LEGACY FONT (LIMON/ABC) TO UNICODE DECODER ===
-function convertLimonToKhmerUnicode(str) {
+function convertLimonToKhmerUnicode(str, forceLimon = false) {
     if (!str) return '';
 
-    // If text already contains standard Khmer Unicode range (U+1780 - U+17FF), normalize NFC & return
-    if (/[\u1780-\u17FF]/.test(str)) {
+    // If not forced and string already has standard Khmer Unicode range (U+1780-U+17FF), normalize NFC
+    if (!forceLimon && /[\u1780-\u17FF]/.test(str)) {
         try { return str.normalize('NFC'); } catch(e) { return str; }
     }
 
@@ -1645,6 +1645,7 @@ function convertLimonToKhmerUnicode(str) {
         'l': 'ល', 'v': 'វ', 's': 'ស', 'a': 'អ', 'L': 'ឡ',
         'A': 'ា', 'i': 'ិ', 'I': 'ី', 'w': 'ឹ', 'W': 'ឺ',
         'u': 'ុ', 'U': 'ូ', 'Y': 'ួ', 'e': 'ើ', 'E': 'ឿ',
+        'K': '្ក', 'C': '្ង', 'J': '្ច', 'H': '្ជ', 'R': '្រ', 'S': '្ស', 'V': '្វ',
         'æ': '្ឋ', 'μ': '្ម', 'Ø': 'ញ្ញ', 'é': 'នៃ', '<': '្ក',
         'M': 'ំ', 'H': 'ះ', '¡': '៉', '¢': '៊', '£': '់',
         '0': '០', '1': '១', '2': '២', '3': '៣', '4': '៤',
@@ -1673,7 +1674,7 @@ async function exportPdfPageToText() {
         const textContent = await page.getTextContent();
 
         currentRawExtractedText = textContent.items.map(item => item.str).join(' ').trim();
-        currentDecodedExtractedText = convertLimonToKhmerUnicode(currentRawExtractedText);
+        currentDecodedExtractedText = convertLimonToKhmerUnicode(currentRawExtractedText, true);
 
         const modeSelect = document.getElementById('text-encoding-mode');
         const mode = modeSelect ? modeSelect.value : 'limon';
@@ -1703,14 +1704,14 @@ function updateTextEncodingMode() {
 
     if (mode === 'unicode') {
         currentExtractedText = currentRawExtractedText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        showToast('បានជ្រើសរើស៖ 🇰🇭 Khmer Unicode (ខ្មែរយូនីកូដដើម)');
     } else {
-        currentExtractedText = currentDecodedExtractedText || currentRawExtractedText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        currentExtractedText = convertLimonToKhmerUnicode(currentRawExtractedText, true) || currentRawExtractedText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        showToast('បានជ្រើសរើស៖ 🇰🇭 Limon (លីម៉ុង ➔ ខ្មែរយូនីកូដ)');
     }
 
     const txtArea = document.getElementById('pdf-text-extracted-area');
     if (txtArea) txtArea.value = currentExtractedText;
-
-    showToast(mode === 'unicode' ? 'បានប្តូរទៅ៖ 🔤 Unicode / Original Text' : 'បានប្តូរទៅ៖ 🇰🇭 Limon ➔ Khmer Unicode');
 }
 
 function copyExtractedText() {
