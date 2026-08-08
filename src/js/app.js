@@ -1766,7 +1766,7 @@ function downloadExtractedTextFile() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showToast(`បានទាញយកឯកសារ ${filename} 💾`);
+    showToast(`បានទាញយក ${filename} ទៅកាន់ Folder "Download" 💾`);
 }
 
 function closePdfTextModal(e) {
