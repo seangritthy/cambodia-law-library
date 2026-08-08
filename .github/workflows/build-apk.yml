@@ -54,7 +54,9 @@ jobs:
           fi
 
       - name: Make Gradlew Executable
-        run: chmod +x android/gradlew
+        run: |
+          chmod +x android/gradlew
+          sed -i '/android.aapt2FromMavenOverride/d' android/gradle.properties
 
       - name: Build Android Release & Debug APKs
         run: |
