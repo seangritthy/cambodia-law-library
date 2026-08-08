@@ -18,7 +18,7 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v2.4.0</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v2.4.1</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -344,7 +344,10 @@
             </div>
             <div class="modal-footer" style="justify-content:space-between;">
                 <button class="btn-secondary" onclick="closePdfImageModal()">បិទ</button>
-                <button class="btn-primary" onclick="downloadPdfPageImage()">💾 ទាញយករូបភាព (PNG)</button>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="btn-secondary" onclick="sharePdfPageImage()">📲 ចែករំលែក (Share)</button>
+                    <button class="btn-primary" onclick="downloadPdfPageImage()">💾 ទាញយករូបភាព (PNG)</button>
+                </div>
             </div>
         </div>
     </div>
@@ -365,6 +368,7 @@
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <button id="btn-ocr-trigger" class="btn-secondary" onclick="runKhmerOcrOnCurrentPage()">🔍 ស្កេនអត្ថបទខ្មែរ (Khmer OCR)</button>
                     <button class="btn-secondary" onclick="copyExtractedText()">📋 ចម្លងអត្ថបទ</button>
+                    <button class="btn-secondary" onclick="shareExtractedText()">📲 ចែករំលែក (Share)</button>
                     <button class="btn-primary" onclick="downloadExtractedTextFile()">💾 ទាញយក .txt</button>
                 </div>
             </div>

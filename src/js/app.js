@@ -1057,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.4.0';
+const CURRENT_VERSION = '2.4.1';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1528,70 +1528,48 @@ function prevSearchMatch() {
     jumpToSearchMatch(currentMatchIndex);
 }
 
-async function saveOrShareFile(blob, filename, mimeType) {
-    const file = new File([blob], filename, { type: mimeType });
+function downloadPdfPageImage() {
+    if (!currentExportImageCanvas) return;
+    const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
+    const filename = `${bookTitle}_Page_${currentPage}.png`;
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-            await navigator.share({
-                files: [file],
-                title: filename,
-                text: `រក្សាទុកឯកសារ ${filename}`
-            });
-            showToast(`បានជ្រើសរើសទីតាំងរក្សាទុក ${filename} 📲`);
-            return;
-        } catch(err) {
-            if (err.name !== 'AbortError') {
-                console.warn('Web share failed, fallback to direct download:', err);
-            } else {
-                return;
-            }
-        }
+    try {
+        const dataUrl = currentExportImageCanvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = filename;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => document.body.removeChild(a), 500);
+
+        showToast(`បានទាញយករូបភាព ${filename} 💾`);
+    } catch(err) {
+        console.error('Image download error:', err);
+        showToast('មិនអាចទាញយករូបភាពបានទេ');
     }
-
-    if (window.showSaveFilePicker) {
-        try {
-            const handle = await window.showSaveFilePicker({
-                suggestedName: filename,
-                types: [{
-                    description: mimeType === 'image/png' ? 'PNG Image' : 'Text Document',
-                    accept: { [mimeType]: [mimeType === 'image/png' ? '.png' : '.txt'] }
-                }]
-            });
-            const writable = await handle.createWritable();
-            await writable.write(blob);
-            await writable.close();
-            showToast(`បានរក្សាទុក ${filename} រួចរាល់! 💾`);
-            return;
-        } catch(err) {
-            if (err.name !== 'AbortError') {
-                console.warn('SaveFilePicker error:', err);
-            } else {
-                return;
-            }
-        }
-    }
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    showToast(`បានទាញយក ${filename} ទៅកាន់ Folder "Download" 💾`);
 }
 
-async function downloadPdfPageImage() {
+async function sharePdfPageImage() {
     if (!currentExportImageCanvas) return;
     const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
     const filename = `${bookTitle}_Page_${currentPage}.png`;
 
     currentExportImageCanvas.toBlob(async (blob) => {
         if (!blob) return;
-        await saveOrShareFile(blob, filename, 'image/png');
+        const file = new File([blob], filename, { type: 'image/png' });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: filename
+                });
+                showToast('បានចែករំលែករូបភាព! 📲');
+                return;
+            } catch(e) {}
+        }
+        downloadPdfPageImage();
     }, 'image/png');
 }
 
@@ -1818,13 +1796,59 @@ function copyExtractedText() {
     });
 }
 
-async function downloadExtractedTextFile() {
+function downloadExtractedTextFile() {
     if (!currentExtractedText) return;
     const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
     const filename = `${bookTitle}_Page_${currentPage}.txt`;
 
-    const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
-    await saveOrShareFile(blob, filename, 'text/plain');
+    try {
+        const blob = new Blob([currentExtractedText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 500);
+
+        showToast(`បានទាញយក ${filename} 💾`);
+    } catch(err) {
+        console.error('Text download error:', err);
+        showToast('មិនអាចទាញយកអត្ថបទបានទេ');
+    }
+}
+
+async function shareExtractedText() {
+    if (!currentExtractedText) return;
+    const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
+    const filename = `${bookTitle}_Page_${currentPage}.txt`;
+    const file = new File([currentExtractedText], filename, { type: 'text/plain;charset=utf-8' });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({
+                files: [file],
+                title: filename,
+                text: currentExtractedText.slice(0, 100)
+            });
+            showToast('បានចែករំលែកអត្ថបទ! 📲');
+            return;
+        } catch(e) {}
+    } else if (navigator.share) {
+        try {
+            await navigator.share({
+                title: filename,
+                text: currentExtractedText
+            });
+            showToast('បានចែករំលែកអត្ថបទ! 📲');
+            return;
+        } catch(e) {}
+    }
+    copyExtractedText();
 }
 
 function closePdfTextModal(e) {
