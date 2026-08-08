@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.6.6';
+const CURRENT_VERSION = '1.6.7';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1677,6 +1677,13 @@ function convertLimonToKhmerUnicode(str, forceLimon = false) {
         try { return processed.normalize('NFC'); } catch(e) { return processed; }
     }
 
+    const LIMON_CONS = new Set([
+        'ក','ខ','គ','ឃ','ង','ច','ឆ','ជ','ឈ','ញ','ដ','ឋ','ឌ','ឍ','ណ',
+        'ត','ថ','ទ','ធ','ន','ប','ព','ម','យ','រ','ល','វ','ស','ហ','ឡ','អ'
+    ]);
+
+    const PRE_VOWELS = { 'e': 'េ', 'E': 'ែ', 'o': 'ោ', 'O': 'ៅ' };
+
     const LIMON_MAP = {
         'k': 'ក', 'x': 'ខ', 'g': 'គ', 'X': 'ឃ', 'c': 'ង',
         'j': 'ច', 'q': 'ឆ', 'h': 'ជ', 'Q': 'ឈ', 'B': 'ញ',
@@ -1685,7 +1692,7 @@ function convertLimonToKhmerUnicode(str, forceLimon = false) {
         'p': 'ប', 'P': 'ព', 'm': 'ម', 'y': 'យ', 'r': 'រ',
         'l': 'ល', 'v': 'វ', 's': 'ស', 'a': 'អ', 'L': 'ឡ',
         'A': 'ា', 'i': 'ិ', 'I': 'ី', 'w': 'ឹ', 'W': 'ឺ',
-        'u': 'ុ', 'U': 'ូ', 'Y': 'ួ', 'e': 'ើ', 'E': 'ឿ',
+        'u': 'ុ', 'U': 'ូ', 'Y': 'ួ',
         'K': '្ក', 'C': '្ង', 'J': '្ច', 'H': '្ជ', 'R': '្រ', 'S': '្ស', 'V': '្វ',
         'æ': '្ឋ', 'μ': '្ម', 'Ø': 'ញ្ញ', 'é': 'នៃ', '<': '្ក',
         'M': 'ំ', 'H': 'ះ', '¡': '៉', '¢': '៊', '£': '់',
@@ -1693,13 +1700,27 @@ function convertLimonToKhmerUnicode(str, forceLimon = false) {
         '5': '៥', '6': '៦', '7': '៧', '8': '៨', '9': '៩'
     };
 
-    let out = '';
+    let out = [];
+    let pendingVowel = null;
+
     for (let i = 0; i < processed.length; i++) {
         const ch = processed[i];
-        out += LIMON_MAP[ch] || ch;
-    }
+        if (PRE_VOWELS[ch]) {
+            pendingVowel = PRE_VOWELS[ch];
+            continue;
+        }
 
-    try { return out.normalize('NFC'); } catch(e) { return out; }
+        const mapped = LIMON_MAP[ch] || ch;
+        out.push(mapped);
+
+        if (pendingVowel && LIMON_CONS.has(mapped)) {
+            out.push(pendingVowel);
+            pendingVowel = null;
+        }
+    }
+    if (pendingVowel) out.push(pendingVowel);
+
+    try { return out.join('').normalize('NFC'); } catch(e) { return out.join(''); }
 }
 
 // === EXPORT PDF PAGE TO TEXT (.txt & Copy) ===
