@@ -361,8 +361,10 @@ async function openBook(book) {
     pdfScrollContainer.classList.add('hidden');
     pdfFlipContainer.classList.add('hidden');
     
-    btnTts.textContent = '🔊 អានអត្ថបទ';
-    btnTts.classList.remove('reading');
+    if (btnTts) {
+        btnTts.textContent = '🔊 អានអត្ថបទ';
+        btnTts.classList.remove('reading');
+    }
     updateReaderFavButton();
     updateZoomDisplay();
 
@@ -1026,8 +1028,10 @@ function playGoogleTTS(text) {
 function stopReading() {
     isReading = false;
     try { window.speechSynthesis.cancel(); } catch(e) {}
-    btnTts.textContent = '🔊 អានអត្ថបទ';
-    btnTts.classList.remove('reading');
+    if (btnTts) {
+        btnTts.textContent = '🔊 អានអត្ថបទ';
+        btnTts.classList.remove('reading');
+    }
     const playerBar = document.getElementById('tts-player-bar');
     if (playerBar) playerBar.classList.add('hidden');
 }
@@ -1054,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.6.0';
+const CURRENT_VERSION = '1.6.1';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
