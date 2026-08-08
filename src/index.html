@@ -18,7 +18,7 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v3.3.6</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v3.3.7</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -218,8 +218,9 @@
         <!-- Reader Bottom Navbar -->
         <div class="reader-bottombar">
             <button id="btn-prev" class="btn-nav" onclick="prevPage()">◀ មុន</button>
-            <button class="btn-pdf-tool btn-image" onclick="exportPdfPageToImage()">🖼️ យកជារូបភាព</button>
-            <button class="btn-pdf-tool btn-text" onclick="exportPdfPageToText()">📄 យកជាអត្ថបទ</button>
+            <button class="btn-pdf-tool btn-read-native" onclick="openCurrentBookInNativeViewer()" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-weight:600;">📖 បើកអាន PDF (Read PDF)</button>
+            <button class="btn-pdf-tool btn-image" onclick="exportPdfPageToImage()">🖼️ ជារូបភាព</button>
+            <button class="btn-pdf-tool btn-text" onclick="exportPdfPageToText()">📄 ជាអត្ថបទ</button>
             <button id="btn-next" class="btn-nav" onclick="nextPage()">បន្ទាប់ ▶</button>
         </div>
     </div>
