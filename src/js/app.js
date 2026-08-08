@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.6.1';
+const CURRENT_VERSION = '1.6.2';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1627,6 +1627,39 @@ function closePdfImageModal(e) {
     document.getElementById('modal-pdf-to-image').classList.add('hidden');
 }
 
+// === KHMER LEGACY FONT (LIMON/ABC) TO UNICODE DECODER ===
+function convertLimonToKhmerUnicode(str) {
+    if (!str) return '';
+
+    // If text already contains standard Khmer Unicode range (U+1780 - U+17FF), normalize NFC & return
+    if (/[\u1780-\u17FF]/.test(str)) {
+        try { return str.normalize('NFC'); } catch(e) { return str; }
+    }
+
+    const LIMON_MAP = {
+        'k': 'ក', 'x': 'ខ', 'g': 'គ', 'X': 'ឃ', 'c': 'ង',
+        'j': 'ច', 'q': 'ឆ', 'h': 'ជ', 'Q': 'ឈ', 'B': 'ញ',
+        'd': 'ដ', 'b': 'ឋ', 'D': 'ឌ', 'ß': 'ឍ', 'N': 'ណ',
+        't': 'ត', 'f': 'ថ', 'T': 'ទ', 'F': 'ធ', 'n': 'ន',
+        'p': 'ប', 'P': 'ព', 'm': 'ម', 'y': 'យ', 'r': 'រ',
+        'l': 'ល', 'v': 'វ', 's': 'ស', 'a': 'អ', 'L': 'ឡ',
+        'A': 'ា', 'i': 'ិ', 'I': 'ី', 'w': 'ឹ', 'W': 'ឺ',
+        'u': 'ុ', 'U': 'ូ', 'Y': 'ួ', 'e': 'ើ', 'E': 'ឿ',
+        'æ': '្ឋ', 'μ': '្ម', 'Ø': 'ញ្ញ', 'é': 'នៃ', '<': '្ក',
+        'M': 'ំ', 'H': 'ះ', '¡': '៉', '¢': '៊', '£': '់',
+        '0': '០', '1': '១', '2': '២', '3': '៣', '4': '៤',
+        '5': '៥', '6': '៦', '7': '៧', '8': '៨', '9': '៩'
+    };
+
+    let out = '';
+    for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        out += LIMON_MAP[ch] || ch;
+    }
+
+    try { return out.normalize('NFC'); } catch(e) { return out; }
+}
+
 // === EXPORT PDF PAGE TO TEXT (.txt & Copy) ===
 let currentExtractedText = '';
 
@@ -1636,9 +1669,11 @@ async function exportPdfPageToText() {
         showToast(`កំពុងស្រង់អត្ថបទពីទំព័រទី ${currentPage}... 📄`);
         const page = await pdfDoc.getPage(currentPage);
         const textContent = await page.getTextContent();
-        const text = textContent.items.map(item => item.str).join(' ').trim();
 
-        currentExtractedText = text || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        let rawText = textContent.items.map(item => item.str).join(' ').trim();
+        let decodedText = convertLimonToKhmerUnicode(rawText);
+
+        currentExtractedText = decodedText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
 
         const txtArea = document.getElementById('pdf-text-extracted-area');
         const pageLabel = document.getElementById('txt-export-page-num');
