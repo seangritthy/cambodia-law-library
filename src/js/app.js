@@ -951,8 +951,7 @@ async function toggleRead() {
 
         const page = await pdfDoc.getPage(currentPage);
         const textContent = await page.getTextContent();
-        const rawText = textContent.items.map(item => item.str).join(' ').trim();
-        const text = convertPdfTextToUnicode(rawText);
+        const text = textContent.items.map(item => item.str).join(' ').trim();
 
         if (!text || text.length < 3) {
             alert('រកមិនឃើញអត្ថបទនៅទំព័រនេះ។\nPDF នេះអាចជាឯកសារស្កែន (រូបភាព)។');
@@ -1059,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.1.0';
+const CURRENT_VERSION = '2.2.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1353,8 +1352,7 @@ async function loadTableOfContents() {
         for (let p = 1; p <= scanPages; p++) {
             const page = await pdfDoc.getPage(p);
             const content = await page.getTextContent();
-            const rawText = content.items.map(item => item.str).join(' ');
-            const fullText = convertPdfTextToUnicode(rawText);
+            const fullText = content.items.map(item => item.str).join(' ');
             let match;
             while ((match = headingRegex.exec(fullText)) !== null) {
                 const title = match[0].trim();
@@ -1464,8 +1462,7 @@ async function executeDocSearch() {
         try {
             const page = await pdfDoc.getPage(p);
             const content = await page.getTextContent();
-            const rawText = content.items.map(i => i.str).join(' ');
-            const pageText = convertPdfTextToUnicode(rawText);
+            const pageText = content.items.map(i => i.str).join(' ');
             
             let idx = pageText.toLowerCase().indexOf(qLower);
             while (idx !== -1) {
@@ -1630,7 +1627,7 @@ function closePdfImageModal(e) {
     document.getElementById('modal-pdf-to-image').classList.add('hidden');
 }
 
-// === EXPORT PDF PAGE TO TEXT (.txt & Copy & Khmer OCR) ===
+// === EXPORT PDF PAGE TO TEXT (.txt & Copy & Khmer OCR for Current Page) ===
 let currentExtractedText = '';
 const ocrTextCache = {};
 
@@ -1659,7 +1656,7 @@ async function ocrKhmerPdfPage(page, pageNumber) {
         logger: m => {
             if (m && m.status === 'recognizing text') {
                 const pct = Math.round((m.progress || 0) * 100);
-                showToast(`កំពុងស្កេនរូបភាព (OCR)... ${pct}% 🔍`);
+                showToast(`កំពុងស្កេនរូបភាពទំព័រទី ${pageNumber} (OCR)... ${pct}% 🔍`);
             }
         }
     });
@@ -1669,29 +1666,6 @@ async function ocrKhmerPdfPage(page, pageNumber) {
         ocrTextCache[cacheKey] = ocrText;
     }
     return ocrText;
-}
-
-async function extractPageTextWithFallback(page, pageNumber) {
-    const textContent = await page.getTextContent();
-    const rawText = textContent.items.map(item => item.str).join(' ').trim();
-
-    if (rawText && rawText.length > 20) {
-        return convertPdfTextToUnicode(rawText);
-    }
-
-    const cacheKey = `${currentBook ? currentBook.id : 'doc'}_p${pageNumber}`;
-    if (ocrTextCache[cacheKey]) {
-        return ocrTextCache[cacheKey];
-    }
-
-    console.log(`Running Khmer OCR fallback on page ${pageNumber}...`);
-    try {
-        const ocrText = await ocrKhmerPdfPage(page, pageNumber);
-        return ocrText || (rawText ? convertPdfTextToUnicode(rawText) : 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។');
-    } catch(err) {
-        console.warn('OCR Fallback error:', err);
-        return rawText ? convertPdfTextToUnicode(rawText) : 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ។';
-    }
 }
 
 async function runKhmerOcrOnCurrentPage() {
@@ -1705,12 +1679,12 @@ async function runKhmerOcrOnCurrentPage() {
         const page = await pdfDoc.getPage(currentPage);
         const ocrText = await ocrKhmerPdfPage(page, currentPage);
 
-        if (txtArea) txtArea.value = ocrText || 'មិនអាចស្កេនអត្ថបទខ្មែរចេញពីរូបភាពនេះបានទេ';
+        if (txtArea) txtArea.value = ocrText || 'មិនអាចស្កេនអត្ថបទខ្មែរចេញពីរូបភាពទំព័រនេះបានទេ';
         currentExtractedText = ocrText;
-        showToast('បានស្កេនអត្ថបទខ្មែរ (OCR) រួចរាល់! 🔍');
+        showToast(`បានស្កេនអត្ថបទខ្មែរទំព័រទី ${currentPage} (OCR) រួចរាល់! 🔍`);
     } catch(err) {
         console.error('Manual OCR error:', err);
-        showToast('មិនអាចដំណើរការ Khmer OCR បានទេ (សូមពិនិត្យអ៊ីនធឺណិត ឬម៉ូដែល OCR)');
+        showToast('មិនអាចដំណើរការ Khmer OCR បានទេ');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -1721,8 +1695,9 @@ async function exportPdfPageToText() {
     try {
         showToast(`កំពុងស្រង់អត្ថបទពីទំព័រទី ${currentPage}... 📄`);
         const page = await pdfDoc.getPage(currentPage);
+        const textContent = await page.getTextContent();
 
-        currentExtractedText = await extractPageTextWithFallback(page, currentPage);
+        currentExtractedText = textContent.items.map(item => item.str).join(' ').trim() || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
 
         const txtArea = document.getElementById('pdf-text-extracted-area');
         const pageLabel = document.getElementById('txt-export-page-num');
@@ -1772,124 +1747,6 @@ function downloadExtractedTextFile() {
 function closePdfTextModal(e) {
     if (e && e.target !== e.currentTarget) return;
     document.getElementById('modal-pdf-to-text').classList.add('hidden');
-}
-
-// === LIMON FONT <-> KHMER UNICODE CONVERTER MODAL & TOOLS ===
-function openLimonConverterModal() {
-    const modal = document.getElementById('modal-limon-converter');
-    if (modal) modal.classList.remove('hidden');
-    convertLimonInputText();
-}
-
-function closeLimonConverterModal(e) {
-    if (e && e.target !== e.currentTarget) return;
-    const modal = document.getElementById('modal-limon-converter');
-    if (modal) modal.classList.add('hidden');
-}
-
-function convertLimonInputText() {
-    const inputArea = document.getElementById('limon-input-text');
-    const outputArea = document.getElementById('limon-output-text');
-    const directionSelect = document.getElementById('limon-direction-select');
-    if (!inputArea || !outputArea) return;
-
-    const text = inputArea.value || '';
-    const dir = directionSelect ? directionSelect.value : 'limonToUni';
-
-    if (!text.trim()) {
-        outputArea.value = '';
-        return;
-    }
-
-    if (typeof KhmerConverter !== 'undefined') {
-        if (dir === 'limonToUni') {
-            if (typeof KhmerConverter.convertLegacyToUnicode === 'function') {
-                outputArea.value = KhmerConverter.convertLegacyToUnicode(text, 'Limon S1');
-            } else if (typeof KhmerConverter.limonToUnicode === 'function') {
-                outputArea.value = KhmerConverter.limonToUnicode(text);
-            } else {
-                outputArea.value = text;
-            }
-        } else if (dir === 'uniToLimon') {
-            if (typeof KhmerConverter.convertUnicodeToLegacy === 'function') {
-                outputArea.value = KhmerConverter.convertUnicodeToLegacy(text, 'Limon S1');
-            } else if (typeof KhmerConverter.limon === 'function') {
-                outputArea.value = KhmerConverter.limon(text);
-            } else {
-                outputArea.value = text;
-            }
-        } else {
-            outputArea.value = text;
-        }
-    } else {
-        outputArea.value = text;
-    }
-}
-
-function copyLimonOutputText() {
-    const outputArea = document.getElementById('limon-output-text');
-    if (!outputArea || !outputArea.value) {
-        showToast('គ្មានអត្ថបទសម្រាប់ចម្លងទេ');
-        return;
-    }
-    navigator.clipboard.writeText(outputArea.value).then(() => {
-        showToast('បានចម្លងលទ្ធផលចូល Clipboard រួចរាល់! 📋');
-    }).catch(() => {
-        outputArea.select();
-        document.execCommand('copy');
-        showToast('បានចម្លងលទ្ធផលចូល Clipboard! 📋');
-    });
-}
-
-function clearLimonConverter() {
-    const inputArea = document.getElementById('limon-input-text');
-    const outputArea = document.getElementById('limon-output-text');
-    if (inputArea) inputArea.value = '';
-    if (outputArea) outputArea.value = '';
-}
-
-function convertExtractedLimonToUnicode() {
-    const txtArea = document.getElementById('pdf-text-extracted-area');
-    if (!txtArea || !txtArea.value) {
-        showToast('គ្មានអត្ថបទសម្រាប់បម្លែងទេ');
-        return;
-    }
-    if (typeof KhmerConverter !== 'undefined' && typeof KhmerConverter.limonToUnicode === 'function') {
-        const converted = KhmerConverter.limonToUnicode(txtArea.value);
-        txtArea.value = converted;
-        currentExtractedText = converted;
-        showToast('បានបម្លែងពុម្ពអក្សរ Limon ទៅជា Khmer Unicode រួចរាល់! 🔤');
-    } else {
-        showToast('ពុំអាចបម្លែងពុម្ពអក្សរបានទេ');
-    }
-}
-
-function looksLikeLimonS1(text) {
-    if (!text) return false;
-    const limonPatterns = ['Rbs', 'kar', 'c,ab', 'RBh', 'maRta', 'Gnuvtþ', 'b¤', ')an', 'Edl', 'CasßaBr', 'eTas', 'Rbkas'];
-    let count = 0;
-    for (const pattern of limonPatterns) {
-        if (text.includes(pattern)) {
-            count++;
-            if (count >= 2) return true;
-        }
-    }
-    return false;
-}
-
-function convertPdfTextToUnicode(rawText, encodingHint = 'auto') {
-    if (!rawText) return '';
-    if (typeof KhmerConverter === 'undefined') return rawText;
-
-    if (encodingHint === 'limon-s1' || (encodingHint === 'auto' && looksLikeLimonS1(rawText))) {
-        if (typeof KhmerConverter.convertLegacyToUnicode === 'function') {
-            return KhmerConverter.convertLegacyToUnicode(rawText, 'Limon S1');
-        }
-        if (typeof KhmerConverter.limonToUnicode === 'function') {
-            return KhmerConverter.limonToUnicode(rawText);
-        }
-    }
-    return rawText;
 }
 
 
