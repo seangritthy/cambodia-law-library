@@ -547,6 +547,33 @@ async function loadArrayBufferData(url, onProgress) {
         console.warn('Fetch ArrayBuffer failed for:', url, e);
     }
 
+    // 3. Fallback CORS proxy for remote URLs if direct fetch fails
+    if (url.startsWith('http')) {
+        const proxyUrls = [
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+            `https://corsproxy.io/?${encodeURIComponent(url)}`
+        ];
+        for (const proxyUrl of proxyUrls) {
+            try {
+                const res = await fetch(proxyUrl);
+                if (res.ok) {
+                    const buf = await res.arrayBuffer();
+                    if (buf && buf.byteLength > 1000) {
+                        const finalMB = (buf.byteLength / (1024 * 1024)).toFixed(1);
+                        if (onProgress) onProgress(100, finalMB, finalMB);
+                        if ('caches' in window) {
+                            try {
+                                const cache = await caches.open(PDF_CACHE_KEY);
+                                await cache.put(url, new Response(buf, { headers: res.headers }));
+                            } catch (e) {}
+                        }
+                        return buf;
+                    }
+                }
+            } catch (e) {}
+        }
+    }
+
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
@@ -1235,7 +1262,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.4.4';
+const CURRENT_VERSION = '3.4.5';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
