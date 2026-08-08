@@ -399,19 +399,31 @@ async function openBook(book) {
     const primaryUrl = localUrl || remoteUrl;
     const fallbackUrl = remoteUrl || localUrl;
 
+    const knownSizeBytes = (currentBook && currentBook.sizeBytes && currentBook.sizeBytes > 0) ? currentBook.sizeBytes : 0;
+
     function onDownloadProgress(pct, rMB, tMB) {
-        if (pct >= 0) {
-            const displayPct = Math.max(5, Math.min(100, pct));
-            if (progressBar) progressBar.style.width = `${displayPct}%`;
-            if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${pct}% (${rMB}MB / ${tMB === '?' ? '~5MB' : tMB + 'MB'})`;
-            if (loadingStatusText) loadingStatusText.textContent = `កំពុងទាញយកឯកសារ... ${pct}%`;
-        } else {
+        let displayPct = pct;
+        let totalMBStr = tMB;
+
+        if (pct < 0 || tMB === '?' || !tMB) {
             const rVal = parseFloat(rMB) || 0;
-            const estPct = Math.min(95, Math.max(10, Math.round((rVal / 5.0) * 100)));
-            if (progressBar) progressBar.style.width = `${estPct}%`;
-            if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${estPct}% (${rMB}MB / ~5MB)`;
-            if (loadingStatusText) loadingStatusText.textContent = `កំពុងទាញយកឯកសារ... ${estPct}%`;
+            const tBytes = knownSizeBytes > 0 ? knownSizeBytes : 0;
+            if (tBytes > 0) {
+                const totalMB = (tBytes / (1024 * 1024)).toFixed(1);
+                displayPct = Math.min(100, Math.round(((rVal * 1024 * 1024) / tBytes) * 100));
+                totalMBStr = `${totalMB}MB`;
+            } else {
+                displayPct = Math.min(95, Math.max(10, Math.round((rVal / 5.0) * 100)));
+                totalMBStr = '~5MB';
+            }
+        } else {
+            totalMBStr = `${tMB}MB`;
         }
+
+        displayPct = Math.max(5, Math.min(100, displayPct));
+        if (progressBar) progressBar.style.width = `${displayPct}%`;
+        if (progressPercent) progressPercent.textContent = `ទាញយក៖ ${displayPct}% (${rMB}MB / ${totalMBStr})`;
+        if (loadingStatusText) loadingStatusText.textContent = `កំពុងទាញយកឯកសារ... ${displayPct}%`;
     }
 
     try {
@@ -459,6 +471,8 @@ const PDF_CACHE_KEY = 'cambodia_law_pdf_cache_v1';
 async function loadArrayBufferData(url, onProgress) {
     if (!url) return null;
 
+    const knownSizeBytes = (currentBook && currentBook.sizeBytes && currentBook.sizeBytes > 0) ? currentBook.sizeBytes : 0;
+
     // 1. Check local phone Cache API first for instant offline access next time
     if ('caches' in window) {
         try {
@@ -480,7 +494,7 @@ async function loadArrayBufferData(url, onProgress) {
         const response = await fetch(url);
         if (response.ok) {
             const contentLength = response.headers.get('content-length');
-            const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+            const totalBytes = contentLength ? parseInt(contentLength, 10) : (knownSizeBytes > 0 ? knownSizeBytes : 0);
 
             if (response.body && typeof ReadableStream !== 'undefined') {
                 const reader = response.body.getReader();
@@ -500,8 +514,7 @@ async function loadArrayBufferData(url, onProgress) {
                             const tMB = (totalBytes / (1024 * 1024)).toFixed(1);
                             onProgress(pct, rMB, tMB);
                         } else {
-                            const estPct = Math.min(95, Math.max(10, Math.round((receivedBytes / (5 * 1024 * 1024)) * 100)));
-                            onProgress(estPct, rMB, '?');
+                            onProgress(-1, rMB, '?');
                         }
                     }
                 }
@@ -546,13 +559,13 @@ async function loadArrayBufferData(url, onProgress) {
         xhr.onprogress = function(event) {
             if (onProgress) {
                 const rMB = (event.loaded / (1024 * 1024)).toFixed(1);
-                if (event.lengthComputable && event.total > 0) {
-                    const pct = Math.round((event.loaded / event.total) * 100);
-                    const tMB = (event.total / (1024 * 1024)).toFixed(1);
+                const totalBytes = (event.lengthComputable && event.total > 0) ? event.total : (knownSizeBytes > 0 ? knownSizeBytes : 0);
+                if (totalBytes > 0) {
+                    const pct = Math.min(100, Math.round((event.loaded / totalBytes) * 100));
+                    const tMB = (totalBytes / (1024 * 1024)).toFixed(1);
                     onProgress(pct, rMB, tMB);
                 } else {
-                    const estPct = Math.min(95, Math.max(10, Math.round((event.loaded / (5 * 1024 * 1024)) * 100)));
-                    onProgress(estPct, rMB, '?');
+                    onProgress(-1, rMB, '?');
                 }
             }
         };
@@ -583,20 +596,22 @@ async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl, onProgress) 
 
     const localCMapUrl = 'cmaps/';
     const cdnCMapUrl = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/';
+    const knownSizeBytes = (currentBook && currentBook.sizeBytes && currentBook.sizeBytes > 0) ? currentBook.sizeBytes : 0;
 
     function loadPdfTask(paramsObj) {
         const loadingTask = pdfjsLib.getDocument(paramsObj);
         if (onProgress) {
             loadingTask.onProgress = function(data) {
-                if (data && data.total > 0) {
-                    const pct = Math.min(100, Math.round((data.loaded / data.total) * 100));
+                const totalBytes = (data && data.total > 0) ? data.total : (knownSizeBytes > 0 ? knownSizeBytes : 0);
+                if (data && data.loaded > 0) {
                     const rMB = (data.loaded / (1024 * 1024)).toFixed(1);
-                    const tMB = (data.total / (1024 * 1024)).toFixed(1);
-                    onProgress(pct, rMB, tMB);
-                } else if (data && data.loaded > 0) {
-                    const rMB = (data.loaded / (1024 * 1024)).toFixed(1);
-                    const estPct = Math.min(95, Math.max(10, Math.round((data.loaded / (5 * 1024 * 1024)) * 100)));
-                    onProgress(estPct, rMB, '?');
+                    if (totalBytes > 0) {
+                        const pct = Math.min(100, Math.round((data.loaded / totalBytes) * 100));
+                        const tMB = (totalBytes / (1024 * 1024)).toFixed(1);
+                        onProgress(pct, rMB, tMB);
+                    } else {
+                        onProgress(-1, rMB, '?');
+                    }
                 }
             };
         }
@@ -1220,7 +1235,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.4.2';
+const CURRENT_VERSION = '3.4.3';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
