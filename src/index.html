@@ -18,7 +18,7 @@
                     <span class="lib-logo">⚖️</span>
                     <div>
                         <h1>បណ្ណាល័យច្បាប់កម្ពុជា</h1>
-                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.7.0</span></p>
+                        <p class="subtitle">បណ្ណាល័យច្បាប់កម្ពុជា <span id="app-version-badge" class="version-badge">v1.7.1</span></p>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -357,16 +357,7 @@
                 <button class="modal-close-btn" onclick="closePdfTextModal()">✕</button>
             </div>
             <div class="modal-body">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-                    <p class="modal-subtext" style="color:var(--text-muted);font-size:13px;margin:0;">អត្ថបទដែលបានស្រង់ចេញពីទំព័រទី <span id="txt-export-page-num">1</span> ៖</p>
-                    <div style="display:flex; align-items:center; gap:6px; font-size:13px;">
-                        <label for="text-encoding-mode" style="color:var(--text-secondary);font-weight:500;">ប្រភេទអត្ថបទ ៖</label>
-                        <select id="text-encoding-mode" onchange="updateTextEncodingMode()" style="padding:5px 10px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); font-size:13px; font-weight:600; cursor:pointer;">
-                            <option value="limon" selected>🇰🇭 Limon (លីម៉ុង ➔ ខ្មែរយូនីកូដ)</option>
-                            <option value="unicode">🇰🇭 Khmer Unicode (ខ្មែរយូនីកូដដើម)</option>
-                        </select>
-                    </div>
-                </div>
+                <p class="modal-subtext" style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">អត្ថបទដែលបានស្រង់ចេញពីទំព័រទី <span id="txt-export-page-num">1</span> ៖</p>
                 <textarea id="pdf-text-extracted-area" readonly style="width:100%;height:280px;padding:12px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-primary);font-family:'Kantumruy Pro',sans-serif;font-size:14px;line-height:1.6;resize:vertical;"></textarea>
             </div>
             <div class="modal-footer" style="justify-content:space-between;gap:8px;flex-wrap:wrap;">
@@ -384,7 +375,6 @@
 
     <script src="js/pdf.min.js"></script>
     <script src="js/page-flip.browser.js"></script>
-    <script src="js/limon-s1-unicode.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
