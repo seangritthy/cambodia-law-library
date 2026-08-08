@@ -1059,7 +1059,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.9.0';
+const CURRENT_VERSION = '2.0.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1721,10 +1721,22 @@ function convertLimonInputText() {
     }
 
     if (typeof KhmerConverter !== 'undefined') {
-        if (dir === 'limonToUni' && typeof KhmerConverter.limonToUnicode === 'function') {
-            outputArea.value = KhmerConverter.limonToUnicode(text);
-        } else if (dir === 'uniToLimon' && typeof KhmerConverter.limon === 'function') {
-            outputArea.value = KhmerConverter.limon(text);
+        if (dir === 'limonToUni') {
+            if (typeof KhmerConverter.convertLegacyToUnicode === 'function') {
+                outputArea.value = KhmerConverter.convertLegacyToUnicode(text, 'Limon S1');
+            } else if (typeof KhmerConverter.limonToUnicode === 'function') {
+                outputArea.value = KhmerConverter.limonToUnicode(text);
+            } else {
+                outputArea.value = text;
+            }
+        } else if (dir === 'uniToLimon') {
+            if (typeof KhmerConverter.convertUnicodeToLegacy === 'function') {
+                outputArea.value = KhmerConverter.convertUnicodeToLegacy(text, 'Limon S1');
+            } else if (typeof KhmerConverter.limon === 'function') {
+                outputArea.value = KhmerConverter.limon(text);
+            } else {
+                outputArea.value = text;
+            }
         } else {
             outputArea.value = text;
         }
@@ -1771,10 +1783,30 @@ function convertExtractedLimonToUnicode() {
     }
 }
 
-function convertPdfTextToUnicode(rawText) {
+function looksLikeLimonS1(text) {
+    if (!text) return false;
+    const limonPatterns = ['Rbs', 'kar', 'c,ab', 'RBh', 'maRta', 'Gnuvtþ', 'b¤', ')an', 'Edl', 'CasßaBr', 'eTas', 'Rbkas'];
+    let count = 0;
+    for (const pattern of limonPatterns) {
+        if (text.includes(pattern)) {
+            count++;
+            if (count >= 2) return true;
+        }
+    }
+    return false;
+}
+
+function convertPdfTextToUnicode(rawText, encodingHint = 'auto') {
     if (!rawText) return '';
-    if (typeof KhmerConverter !== 'undefined' && typeof KhmerConverter.limonToUnicode === 'function') {
-        return KhmerConverter.limonToUnicode(rawText);
+    if (typeof KhmerConverter === 'undefined') return rawText;
+
+    if (encodingHint === 'limon-s1' || (encodingHint === 'auto' && looksLikeLimonS1(rawText))) {
+        if (typeof KhmerConverter.convertLegacyToUnicode === 'function') {
+            return KhmerConverter.convertLegacyToUnicode(rawText, 'Limon S1');
+        }
+        if (typeof KhmerConverter.limonToUnicode === 'function') {
+            return KhmerConverter.limonToUnicode(rawText);
+        }
     }
     return rawText;
 }
