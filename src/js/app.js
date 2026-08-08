@@ -2067,6 +2067,8 @@ async function getOrOcrPageText(page, pageNumber) {
     }
 
     return rawText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+}
+
 function renderExtractedTextWithHighlight(text) {
     const displayDiv = document.getElementById('pdf-text-highlighted-display');
     const txtArea = document.getElementById('pdf-text-extracted-area');
