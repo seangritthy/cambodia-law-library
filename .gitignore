@@ -4,4 +4,5 @@ android/.gradle/
 android/local.properties
 android/app/release/
 *.keystore
+*.apk
 .DS_Store
