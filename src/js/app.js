@@ -950,11 +950,10 @@ async function toggleRead() {
         if (statusText) statusText.textContent = `កំពុងអានទំព័រទី ${currentPage}...`;
 
         const page = await pdfDoc.getPage(currentPage);
-        const textContent = await page.getTextContent();
-        const text = textContent.items.map(item => item.str).join(' ').trim();
+        const text = await getOrOcrPageText(page, currentPage);
 
         if (!text || text.length < 3) {
-            alert('រកមិនឃើញអត្ថបទនៅទំព័រនេះ។\nPDF នេះអាចជាឯកសារស្កែន (រូបភាព)។');
+            alert('រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (ទោះជាស្កេនរូបភាពរួចហើយ)។');
             stopReading();
             return;
         }
@@ -1058,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.2.1';
+const CURRENT_VERSION = '2.3.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1668,6 +1667,33 @@ async function ocrKhmerPdfPage(page, pageNumber) {
     return ocrText;
 }
 
+async function getOrOcrPageText(page, pageNumber) {
+    const textContent = await page.getTextContent();
+    const rawText = textContent.items.map(item => item.str).join(' ').trim();
+
+    if (rawText && rawText.length > 15) {
+        return rawText;
+    }
+
+    const cacheKey = `${currentBook ? currentBook.id : 'doc'}_p${pageNumber}`;
+    if (ocrTextCache[cacheKey]) {
+        return ocrTextCache[cacheKey];
+    }
+
+    showToast(`ទំព័រទី ${pageNumber}/${totalPages} គ្មានអត្ថបទ embedded ទេ ➔ កំពុងស្កេន Khmer OCR ស្វ័យប្រវត្តិ... 🔍`);
+    try {
+        const ocrText = await ocrKhmerPdfPage(page, pageNumber);
+        if (ocrText) {
+            showToast(`បានស្កេន Khmer OCR ទំព័រទី ${pageNumber}/${totalPages} រួចរាល់! ✨`);
+            return ocrText;
+        }
+    } catch(err) {
+        console.warn('Auto Khmer OCR error on page', pageNumber, err);
+    }
+
+    return rawText || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+}
+
 async function runKhmerOcrOnCurrentPage() {
     if (!pdfDoc) return;
     const btn = document.getElementById('btn-ocr-trigger');
@@ -1695,9 +1721,8 @@ async function exportPdfPageToText() {
     try {
         showToast(`កំពុងស្រង់អត្ថបទពីទំព័រទី ${currentPage}/${totalPages}... 📄`);
         const page = await pdfDoc.getPage(currentPage);
-        const textContent = await page.getTextContent();
 
-        currentExtractedText = textContent.items.map(item => item.str).join(' ').trim() || 'រកមិនឃើញអត្ថបទនៅទំព័រនេះទេ (អាចជាទំព័រស្កែនរូបភាព)។';
+        currentExtractedText = await getOrOcrPageText(page, currentPage);
 
         const txtArea = document.getElementById('pdf-text-extracted-area');
         const pageLabel = document.getElementById('txt-export-page-num');
