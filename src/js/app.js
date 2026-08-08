@@ -448,6 +448,9 @@ async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl) {
         urlsToTry.push(fallbackUrl);
     }
 
+    const localCMapUrl = 'cmaps/';
+    const cdnCMapUrl = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/';
+
     // 1. Try loading binary ArrayBuffer first (most reliable on Android WebViews & local files)
     for (const url of urlsToTry) {
         if (!url) continue;
@@ -457,11 +460,19 @@ async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl) {
                 try {
                     return await pdfjsLib.getDocument({
                         data: buffer,
-                        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+                        cMapUrl: localCMapUrl,
                         cMapPacked: true
                     }).promise;
                 } catch (e1) {
-                    return await pdfjsLib.getDocument({ data: buffer }).promise;
+                    try {
+                        return await pdfjsLib.getDocument({
+                            data: buffer,
+                            cMapUrl: cdnCMapUrl,
+                            cMapPacked: true
+                        }).promise;
+                    } catch (e2) {
+                        return await pdfjsLib.getDocument({ data: buffer }).promise;
+                    }
                 }
             }
         } catch (bufErr) {
@@ -475,14 +486,22 @@ async function getPdfDocumentWithFallbacks(primaryUrl, fallbackUrl) {
         try {
             return await pdfjsLib.getDocument({
                 url: url,
-                cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+                cMapUrl: localCMapUrl,
                 cMapPacked: true
             }).promise;
         } catch (e1) {
             try {
-                return await pdfjsLib.getDocument({ url: url }).promise;
+                return await pdfjsLib.getDocument({
+                    url: url,
+                    cMapUrl: cdnCMapUrl,
+                    cMapPacked: true
+                }).promise;
             } catch (e2) {
-                console.warn('URL load failed for:', url, e2);
+                try {
+                    return await pdfjsLib.getDocument({ url: url }).promise;
+                } catch (e3) {
+                    console.warn('URL load failed for:', url, e3);
+                }
             }
         }
     }
@@ -1035,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.5.0';
+const CURRENT_VERSION = '1.5.1';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
