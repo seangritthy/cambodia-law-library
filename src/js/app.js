@@ -1121,13 +1121,17 @@ async function requestStoragePermission() {
 
 // === Init ===
 document.addEventListener('DOMContentLoaded', () => {
+    const badge = document.getElementById('app-version-badge');
+    if (badge && typeof CURRENT_VERSION !== 'undefined') {
+        badge.textContent = 'v' + CURRENT_VERSION;
+    }
     loadLibrary();
     requestStoragePermission();
     setTimeout(() => checkForUpdates(false), 2000);
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '3.0.0';
+const CURRENT_VERSION = '3.2.1';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
