@@ -58,16 +58,15 @@ jobs:
           chmod +x android/gradlew
           sed -i '/android.aapt2FromMavenOverride/d' android/gradle.properties
 
-      - name: Build Android Release & Debug APKs
+      - name: Build Signed Android Release APK Only
         run: |
           cd android
           ./gradlew assembleRelease --no-daemon --stacktrace
-          ./gradlew assembleDebug --no-daemon --stacktrace || true
 
-      - name: Collect APK Artifacts
+      - name: Collect Signed Release APK Artifact
         run: |
           mkdir -p build-output
-          find android/app/build/outputs/apk/ -name "*.apk" -exec cp {} build-output/ \;
+          cp android/app/build/outputs/apk/release/app-release.apk build-output/CambodiaLawLibrary-${{ github.ref_name }}-signed.apk || find android/app/build/outputs/apk/release/ -name "*.apk" -exec cp {} build-output/ \;
           ls -la build-output/
 
       - name: Upload APK Artifacts
