@@ -1071,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.7.0';
+const CURRENT_VERSION = '2.7.1';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1771,22 +1771,6 @@ async function exportPdfPageToImage() {
         console.error('PDF to Image error:', err);
         showToast('មិនអាចបម្លែងទំព័រជារូបភាពបានទេ');
     }
-}
-
-function downloadPdfPageImage() {
-    if (!currentExportImageCanvas) return;
-    const bookTitle = currentBook ? currentBook.title.replace(/[^a-zA-Z0-9\u1780-\u17FF_-]/g, '_') : 'Law_Page';
-    const filename = `${bookTitle}_Page_${currentPage}.png`;
-
-    const dataUrl = currentExportImageCanvas.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    showToast(`បានទាញយករូបភាព ${filename} 💾`);
 }
 
 function closePdfImageModal(e) {
