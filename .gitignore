@@ -5,4 +5,3 @@ android/local.properties
 android/app/release/
 *.keystore
 .DS_Store
-src/pdfs/*.pdf

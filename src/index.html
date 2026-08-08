@@ -180,12 +180,17 @@
                 <div id="update-changelog-box" class="changelog-box">
                     <!-- Release notes loaded from GitHub -->
                 </div>
-                <div class="update-instructions">
-                    <p><strong>💡 របៀបដំឡើង (How to Install):</strong></p>
-                    <ol>
-                        <li>ចុចប៊ូតុង <strong>"ទាញយកនិងដំឡើង APK"</strong> ខាងក្រោម</li>
-                        <li>បន្ទាប់ពីទាញយកចប់ ចុចលើឯកសារ `.apk` ដើម្បីដំឡើងបន្ត</li>
-                    </ol>
+                
+                <!-- Download Progress Bar Container (Hidden by default) -->
+                <div id="update-progress-container" class="update-progress-container hidden">
+                    <div class="progress-status-row">
+                        <span id="update-progress-status">កំពុងទាញយក APK (Downloading)...</span>
+                        <span id="update-progress-percent">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div id="update-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <p id="update-progress-bytes" class="progress-bytes-text">0 MB / 0 MB</p>
                 </div>
             </div>
             <div class="modal-footer">

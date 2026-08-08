@@ -820,13 +820,57 @@ function downloadAndInstallUpdate() {
         apkUrl = latestReleaseData.html_url || `https://github.com/${GITHUB_REPO}/releases/latest`;
     }
 
-    showToast('កំពុងបើកការទាញយក APK...');
+    const btn = document.getElementById('btn-download-apk');
+    const progressContainer = document.getElementById('update-progress-container');
     
-    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-        window.open(apkUrl, '_system');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ កំពុងទាញយក... (Downloading...)';
+    }
+    if (progressContainer) {
+        progressContainer.classList.remove('hidden');
+    }
+
+    const AppUpdater = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AppUpdater;
+
+    if (AppUpdater) {
+        AppUpdater.addListener('downloadProgress', data => {
+            const percent = data.progress || 0;
+            const pctEl = document.getElementById('update-progress-percent');
+            const fillEl = document.getElementById('update-progress-fill');
+            const bytesEl = document.getElementById('update-progress-bytes');
+            const statusEl = document.getElementById('update-progress-status');
+
+            if (pctEl) pctEl.textContent = percent + '%';
+            if (fillEl) fillEl.style.width = percent + '%';
+            if (bytesEl && data.downloaded && data.total) {
+                const dlMB = (data.downloaded / (1024 * 1024)).toFixed(1);
+                const totMB = (data.total / (1024 * 1024)).toFixed(1);
+                bytesEl.textContent = `${dlMB} MB / ${totMB} MB`;
+            }
+
+            if (percent >= 100 && statusEl) {
+                statusEl.textContent = 'ទាញយកបានសម្រេច! កំពុងបើកកម្មវិធីដំឡើង... (Completed!)';
+            }
+        });
+
+        AppUpdater.downloadAndInstall({ url: apkUrl }).then(() => {
+            showToast('កំពុងបើកកម្មវិធីដំឡើង... (Launching Installer)');
+        }).catch(err => {
+            console.error('In-app update error:', err);
+            showToast('មានបញ្ហាក្នុងការទាញយក APK');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '⬇️ ទាញយកតាម Browser';
+                btn.onclick = () => window.open(apkUrl, '_system');
+            }
+        });
+
     } else {
+        // Fallback for browser
         window.location.href = apkUrl;
     }
 }
+
 
 
