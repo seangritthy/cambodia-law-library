@@ -1050,14 +1050,28 @@ function showToast(message) {
     }, 2500);
 }
 
+async function requestStoragePermission() {
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
+        try {
+            const status = await window.Capacitor.Plugins.Filesystem.checkPermissions();
+            if (status.publicStorage !== 'granted') {
+                await window.Capacitor.Plugins.Filesystem.requestPermissions();
+            }
+        } catch (e) {
+            console.warn('Filesystem permission request error:', e);
+        }
+    }
+}
+
 // === Init ===
 document.addEventListener('DOMContentLoaded', () => {
     loadLibrary();
+    requestStoragePermission();
     setTimeout(() => checkForUpdates(false), 2000);
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '2.5.0';
+const CURRENT_VERSION = '2.6.0';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
