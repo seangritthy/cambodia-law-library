@@ -537,41 +537,139 @@ var KhmerConverter = (() => {
         if (Array.isArray(replacement)) return [unichr(...replacement), replacer];
         return [unichr(replacement), replacer];
       });
-      var LIMON_TO_UNI_MAP = LIMON_REPLACERS.map(([replacement, replacer]) => {
-        return [replacement, replacer];
-      });
-      LIMON_TO_UNI_MAP.push(["<ú", "ពុ"]);
-      LIMON_TO_UNI_MAP.push(["<", "ព"]);
-      LIMON_TO_UNI_MAP.push(["μ", "្ម"]);
-      LIMON_TO_UNI_MAP.push(["ø", "្ល"]);
-      LIMON_TO_UNI_MAP.push(["Pø", "ផ្ល"]);
-      LIMON_TO_UNI_MAP.push(["BaØ", "បញ្ញ"]);
-      LIMON_TO_UNI_MAP.push(["Ba៪", "បញ្ញ"]);
-      LIMON_TO_UNI_MAP.push(["bBaØ", "ប្បញ្ញ"]);
-      LIMON_TO_UNI_MAP.sort((a, b) => b[0].length - a[0].length);
+      var LIMON_S1_MAP = [
+        ["bBaØ", "ប្បញ្ញ"],
+        ["BaØ", "បញ្ញ"],
+        ["Pø", "ផ្ល"],
+        ["<ú", "ពុ"],
+        ["þ", "្ដ"],
+        ["Þ", "្ទ"],
+        [")a", "បា"],
+        ["μ", "្ម"],
+        ["ø", "្ល"],
+        ["..", "។"],
+        [".", "។"],
+        ["²", "ៗ"],
+        [":", "៖"],
+        ["_", "៍"],
+        ["+", "៎"],
+        ["=", "៌"],
+        ["½", "័"],
+        ["á", "្ក"],
+        ["ç", "្ខ"],
+        ["Á", "្គ"],
+        ["Ç", "្ឃ"],
+        ["¶", "្ង"],
+        ["©", "្ច"],
+        ["ä", "្ឆ"],
+        ["¢", "្ជ"],
+        ["Ä", "្ឈ"],
+        ["J", "្ញ"],
+        ["æ", "្ឋ"],
+        ["Ð", "្ឌ"],
+        ["Æ", "្ឍ"],
+        ["Ñ", "្ណ"],
+        ["ß", "្ថ"],
+        ["Þ", "្ទ"],
+        ["§", "្ធ"],
+        ["ñ", "្ន"],
+        [",", "្ប"],
+        ["ö", "្ផ"],
+        ["Ö", "្ភ"],
+        ["S", "្ស"],
+        ["ð", "្ហ"],
+        ["¥", "្អ"],
+        ["R", "្រ"],
+        ["V", "្វ"],
+        ["k", "ក"],
+        ["x", "ខ"],
+        ["K", "គ"],
+        ["X", "ឃ"],
+        ["g", "ង"],
+        ["c", "ច"],
+        ["q", "ឆ"],
+        ["C", "ជ"],
+        ["Q", "ឈ"],
+        ["j", "ញ"],
+        ["d", "ដ"],
+        ["z", "ឋ"],
+        ["D", "ឌ"],
+        ["Z", "ឍ"],
+        ["N", "ណ"],
+        ["t", "ត"],
+        ["f", "ថ"],
+        ["T", "ទ"],
+        ["F", "ធ"],
+        ["n", "ន"],
+        ["b", "ប"],
+        ["p", "ផ"],
+        ["B", "ព"],
+        ["P", "ភ"],
+        ["m", "ម"],
+        ["y", "យ"],
+        ["r", "រ"],
+        ["l", "ល"],
+        ["v", "វ"],
+        ["s", "ស"],
+        ["h", "ហ"],
+        ["L", "ឡ"],
+        ["G", "អ"],
+        ["a", "ា"],
+        ["i", "ិ"],
+        ["I", "ី"],
+        ["w", "ឹ"],
+        ["W", "ឺ"],
+        ["u", "ុ"],
+        ["U", "ូ"],
+        ["Y", "ួ"],
+        ["e", "េ"],
+        ["o", "ៀ"],
+        ["O", "ឿ"],
+        ["A", "ៅ"],
+        ["M", "ំ"],
+        ["H", "ះ"],
+        ["0", "០"],
+        ["1", "១"],
+        ["2", "២"],
+        ["3", "៣"],
+        ["4", "៤"],
+        ["5", "៥"],
+        ["6", "៦"],
+        ["7", "៧"],
+        ["8", "៨"],
+        ["9", "៩"]
+      ];
+
+      // Sort sequence map: longest patterns first
+      LIMON_S1_MAP.sort((a, b) => b[0].length - a[0].length);
 
       function limonToUnicode(text) {
         if (!text) return '';
         let result = text;
+
+        // 1. Re-order pre-subscripts (R = ្រ) and pre-vowels (e = េ, E = ែ)
         result = result.replace(/eR([a-zA-Z\u0080-\u00ff])/g, '$1Re');
         result = result.replace(/ER([a-zA-Z\u0080-\u00ff])/g, '$1RE');
         result = result.replace(/R([a-zA-Z\u0080-\u00ff])/g, '$1R');
         result = result.replace(/e([a-zA-Z\u0080-\u00ff])/g, '$1e');
         result = result.replace(/E([a-zA-Z\u0080-\u00ff])/g, '$1E');
 
-        for (let [asciiStr, uniStr] of LIMON_TO_UNI_MAP) {
-          if (asciiStr && asciiStr !== ' ') {
-            result = result.replaceAll(asciiStr, uniStr);
+        // 2. Sequence-based matching (longest sequences first)
+        for (const [legacy, unicode] of LIMON_S1_MAP) {
+          if (legacy) {
+            result = result.split(legacy).join(unicode);
           }
         }
 
+        // 3. Normalize Khmer Unicode split vowels & NFC normalization
         result = result.replace(/\u17c1\u17b8/g, '\u17be');
         result = result.replace(/\u17c1\u17b6/g, '\u17c4');
         result = result.replace(/\u17c1\u17c3/g, '\u17c3');
         result = result.replace(/\u17c1\u17be/g, '\u17be');
         result = result.replace(/\u17c1\u17c4/g, '\u17c4');
         result = result.replace(/\u17d2\u17d2/g, '\u17d2');
-        return result;
+
+        return typeof result.normalize === 'function' ? result.normalize('NFC') : result;
       }
 
       function limon(text) {
