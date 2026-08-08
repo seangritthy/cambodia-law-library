@@ -1058,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === IN-APP UPDATER (GITHUB RELEASES) ===
-const CURRENT_VERSION = '1.6.5';
+const CURRENT_VERSION = '1.6.6';
 const GITHUB_REPO = 'seangritthy/cambodia-law-library';
 let latestReleaseData = null;
 
@@ -1631,9 +1631,50 @@ function closePdfImageModal(e) {
 function convertLimonToKhmerUnicode(str, forceLimon = false) {
     if (!str) return '';
 
+    // ABC & Royal Gazette extended font glyphs matrix
+    const ABC_MAP = {
+        'ƶ្ឋ': 'ថ្ងៃ',
+        'ȭ': 'ឆ្ន',
+        'ŏ': 'ា',
+        'ŷ': 'លេ',
+        'Ȼ': 'ប្ត',
+        'ŋ': 'ា',
+        'ƶ': 'ថ្ងៃ',
+        'ƃ': 'ខែ',
+        'Ĝ': 'ិ',
+        'è': '្ឆ',
+        'ȧ': 'កា',
+        'Ɂ': 'រា',
+        'ç': '្ច',
+        'Ʒ': 'ព្រ',
+        'ƞ': '្ន',
+        'Ɨ': 'ត្រ',
+        'ƚ': 'ថ្ល',
+        'Ɩ': 'ក្រ',
+        'ƴ': 'ម្ភ',
+        'Ƶ': 'ធ្ន',
+        'Ʊ': 'ប្រ',
+        'Ʋ': 'ព្រ',
+        'Ʈ': 'ត្រ',
+        'Ƴ': 'គ្រ',
+        'ƙ': 'ក្ន',
+        'ƥ': 'ផ្ល',
+        'ƨ': 'ស្អ',
+        'Ʃ': 'ស្ម',
+        'ƪ': 'ស្យ',
+        'ƫ': 'ស្រ',
+        'Ƭ': 'ស្ល',
+        'ƭ': 'ស្វ'
+    };
+
+    let processed = str;
+    for (const [k, v] of Object.entries(ABC_MAP)) {
+        processed = processed.replaceAll(k, v);
+    }
+
     // If not forced and string already has standard Khmer Unicode range (U+1780-U+17FF), normalize NFC
-    if (!forceLimon && /[\u1780-\u17FF]/.test(str)) {
-        try { return str.normalize('NFC'); } catch(e) { return str; }
+    if (!forceLimon && /[\u1780-\u17FF]/.test(processed)) {
+        try { return processed.normalize('NFC'); } catch(e) { return processed; }
     }
 
     const LIMON_MAP = {
@@ -1653,8 +1694,8 @@ function convertLimonToKhmerUnicode(str, forceLimon = false) {
     };
 
     let out = '';
-    for (let i = 0; i < str.length; i++) {
-        const ch = str[i];
+    for (let i = 0; i < processed.length; i++) {
+        const ch = processed[i];
         out += LIMON_MAP[ch] || ch;
     }
 
